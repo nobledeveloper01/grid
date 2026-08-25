@@ -1,6 +1,14 @@
-# Internal working documents stay local. Only the product statement is tracked.
+# The pre-build specifications stay local; the living record ships.
+#
+# Tracked:   product statement, roadmap, journal, ADRs.
+# Untracked: PRD, FRD, technical design, UX spec, data model, the planning
+#            roadmap and the backend spec — these are working documents, and
+#            what they decided is recorded in docs/adr/ instead.
 docs/*
 !docs/00-PRODUCT-STATEMENT.md
+!docs/ROADMAP.md
+!docs/JOURNAL.md
+!docs/adr/
 
 # OS / editors
 .DS_Store

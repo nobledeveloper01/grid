@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# Runs the documentation gate before every commit.
+#
+# It blocks on a malformed document and only warns on a stale journal — a hard
+# block there would train people to use --no-verify, and a bypassed gate is
+# worse than a noisy one.
+set -uo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root" || exit 0
+[ -x scripts/doc-check.sh ] || exit 0
+
+if ! scripts/doc-check.sh; then
+  printf '\n\033[0;31mCommit blocked by the documentation gate.\033[0m\n'
+  printf 'Fix the problems above, or commit with --no-verify if you must.\n'
+  exit 1
+fi
