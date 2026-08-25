@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "effectiveDate": "2026-07-01",
+  "note": "Illustrative rates for development. Refreshed over the network when available; the app always displays the effective date of the rates in use, and the user can override the rate manually.",
+  "bands": {
+    "A": { "committedHours": 20 },
+    "B": { "committedHours": 16 },
+    "C": { "committedHours": 12 },
+    "D": { "committedHours": 8 },
+    "E": { "committedHours": 4 }
+  },
+  "rates": {
+    "abuja":        { "A": 20950, "B": 6320, "C": 5140, "D": 4180, "E": 4180 },
+    "benin":        { "A": 20620, "B": 6280, "C": 5100, "D": 4150, "E": 4150 },
+    "eko":          { "A": 20960, "B": 6350, "C": 5170, "D": 4200, "E": 4200 },
+    "enugu":        { "A": 20880, "B": 6300, "C": 5120, "D": 4160, "E": 4160 },
+    "ibadan":       { "A": 20630, "B": 6270, "C": 5090, "D": 4140, "E": 4140 },
+    "ikeja":        { "A": 20970, "B": 6360, "C": 5180, "D": 4210, "E": 4210 },
+    "jos":          { "A": 20740, "B": 6290, "C": 5110, "D": 4150, "E": 4150 },
+    "kaduna":       { "A": 20810, "B": 6310, "C": 5130, "D": 4170, "E": 4170 },
+    "kano":         { "A": 20690, "B": 6280, "C": 5100, "D": 4140, "E": 4140 },
+    "portHarcourt": { "A": 20900, "B": 6330, "C": 5150, "D": 4190, "E": 4190 },
+    "yola":         { "A": 20580, "B": 6260, "C": 5080, "D": 4130, "E": 4130 },
+    "other":        { "A": 20800, "B": 6300, "C": 5120, "D": 4160, "E": 4160 }
+  }
+}

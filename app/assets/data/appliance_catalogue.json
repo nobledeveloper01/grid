@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "note": "Typical rated wattages for the Nigerian domestic market. Users can override any value; these are starting points, not measurements.",
+  "appliances": [
+    { "key": "ceiling_fan",      "name": "Ceiling fan",        "watts": 75,   "hours": 10, "mainsOnly": true },
+    { "key": "standing_fan",     "name": "Standing fan",       "watts": 55,   "hours": 10, "mainsOnly": true },
+    { "key": "led_bulb",         "name": "LED bulb",           "watts": 9,    "hours": 6,  "mainsOnly": true },
+    { "key": "incandescent",     "name": "Incandescent bulb",  "watts": 60,   "hours": 6,  "mainsOnly": true },
+    { "key": "chest_freezer",    "name": "Chest freezer",      "watts": 200,  "hours": 24, "mainsOnly": true },
+    { "key": "refrigerator",     "name": "Refrigerator",       "watts": 150,  "hours": 24, "mainsOnly": true },
+    { "key": "ac_1hp",           "name": "Air conditioner 1HP",   "watts": 750,  "hours": 8, "mainsOnly": true },
+    { "key": "ac_1_5hp",         "name": "Air conditioner 1.5HP", "watts": 1100, "hours": 8, "mainsOnly": true },
+    { "key": "ac_2hp",           "name": "Air conditioner 2HP",   "watts": 1500, "hours": 8, "mainsOnly": true },
+    { "key": "water_pump",       "name": "Water pump",         "watts": 750,  "hours": 1,  "mainsOnly": true },
+    { "key": "electric_iron",    "name": "Electric iron",      "watts": 1000, "hours": 0.5, "mainsOnly": true },
+    { "key": "microwave",        "name": "Microwave",          "watts": 1200, "hours": 0.3, "mainsOnly": true },
+    { "key": "water_heater",     "name": "Water heater",       "watts": 2000, "hours": 1,  "mainsOnly": true },
+    { "key": "television",       "name": "Television",         "watts": 100,  "hours": 6,  "mainsOnly": true },
+    { "key": "decoder",          "name": "Decoder",            "watts": 25,   "hours": 6,  "mainsOnly": true },
+    { "key": "laptop",           "name": "Laptop",             "watts": 65,   "hours": 6,  "mainsOnly": false },
+    { "key": "router",           "name": "Router",             "watts": 12,   "hours": 24, "mainsOnly": false },
+    { "key": "washing_machine",  "name": "Washing machine",    "watts": 500,  "hours": 0.5, "mainsOnly": true },
+    { "key": "electric_kettle",  "name": "Electric kettle",    "watts": 1500, "hours": 0.3, "mainsOnly": true },
+    { "key": "rice_cooker",      "name": "Rice cooker",        "watts": 700,  "hours": 0.7, "mainsOnly": true },
+    { "key": "deep_fryer",       "name": "Deep fryer",         "watts": 1800, "hours": 0.4, "mainsOnly": true },
+    { "key": "blender",          "name": "Blender",            "watts": 400,  "hours": 0.2, "mainsOnly": true },
+    { "key": "hair_dryer",       "name": "Hair dryer",         "watts": 1200, "hours": 0.2, "mainsOnly": true },
+    { "key": "welding_machine",  "name": "Welding machine",    "watts": 4000, "hours": 1,  "mainsOnly": true },
+    { "key": "grinder",          "name": "Grinding machine",   "watts": 1500, "hours": 1,  "mainsOnly": true }
+  ]
+}
