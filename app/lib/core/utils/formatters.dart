@@ -72,6 +72,16 @@ String relativeTime(DateTime then, {required DateTime now}) {
   return '$months month${months == 1 ? '' : 's'} ago';
 }
 
+/// A date and how long ago it was, without saying the same word twice.
+///
+/// `friendlyDate` and `relativeTime` both collapse to "yesterday" one day
+/// out, and the reading history was rendering "yesterday · yesterday".
+String dateAndAge(DateTime then, {required DateTime now}) {
+  final date = friendlyDate(then, now: now);
+  final age = relativeTime(then, now: now);
+  return date.toLowerCase() == age.toLowerCase() ? date : '$date · $age';
+}
+
 /// Hours as "11.2 hours" or "20 hours" — no spurious decimal on a round
 /// number.
 String formatHours(double hours) {

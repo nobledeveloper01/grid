@@ -97,8 +97,7 @@ class ReadingHistoryScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: Space.xs),
                 Text(
-                  '${friendlyDate(r.readAt, now: now)} · '
-                  '${relativeTime(r.readAt, now: now)}',
+                  dateAndAge(r.readAt, now: now),
                   style: t.caption.copyWith(color: c.textSecondary),
                 ),
                 if (flags.isNotEmpty) ...[
