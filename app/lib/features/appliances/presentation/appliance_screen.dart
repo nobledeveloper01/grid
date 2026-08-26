@@ -85,6 +85,13 @@ class ApplianceScreen extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radii.lg),
       ),
+      // Capped short of the top of the screen. A scroll-controlled sheet with
+      // this much in it grows to full height and puts its own title under the
+      // Dynamic Island; the top inset does not reach inside the sheet's
+      // MediaQuery, so the height is what has to give.
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+      ),
       builder: (_) => _ApplianceSheet(meterId: meterId, existing: existing),
     );
   }
@@ -428,9 +435,13 @@ class _Stepper extends StatelessWidget {
         const SizedBox(height: Space.xs),
         Row(
           children: [
-            IconButton.filledTonal(
+            // Styled here rather than through `iconButtonTheme`. Material 3
+            // routes every IconButton variant through that one theme, so
+            // setting a background on it put an amber disc behind the app
+            // bar's back chevron as well.
+            _StepButton(
+              icon: Icons.remove,
               onPressed: value > 1 ? () => onChanged(value - 1) : null,
-              icon: const Icon(Icons.remove),
             ),
             Expanded(
               child: Text(
@@ -439,13 +450,43 @@ class _Stepper extends StatelessWidget {
                 style: t.figure.copyWith(color: c.textPrimary),
               ),
             ),
-            IconButton.filledTonal(
+            _StepButton(
+              icon: Icons.add,
               onPressed: value < 20 ? () => onChanged(value + 1) : null,
-              icon: const Icon(Icons.add),
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final enabled = onPressed != null;
+    return Material(
+      color: enabled ? c.brandSoft : c.surfaceDim,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: Targets.min,
+          height: Targets.min,
+          child: Icon(
+            icon,
+            size: 20,
+            color: enabled ? c.brand : c.textTertiary,
+          ),
+        ),
+      ),
     );
   }
 }
