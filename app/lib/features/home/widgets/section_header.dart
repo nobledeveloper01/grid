@@ -18,21 +18,20 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     final t = context.type;
 
+    // No coloured left bar. `border-left: 3px solid <accent>` is one of the
+    // most recognisable template idioms going, and it is doing work that
+    // type should do: a section is distinguished by weight and spacing, not
+    // by a decorative rule.
     return Row(
       children: [
-        Container(
-          width: 3,
-          height: 16,
-          decoration: BoxDecoration(
-            color: c.brand,
-            borderRadius: BorderRadius.circular(2),
+        Expanded(
+          child: Text(
+            title,
+            style: t.title.copyWith(letterSpacing: -0.2),
           ),
         ),
-        const SizedBox(width: Space.sm),
-        Expanded(child: Text(title, style: t.title)),
         if (action != null && onAction != null)
           TextButton(
             onPressed: onAction,
