@@ -94,6 +94,22 @@ extension type const Naira._(int kobo) implements Object {
     }
     return '${whole < 0 ? '-' : ''}$naira$buffer';
   }
+
+  /// The same amount with nothing at all between the sign and the figure.
+  ///
+  /// For the PDF, and only the PDF. The narrow no-break space that keeps the
+  /// sign's crossbars off the first digit on screen is still *Unicode
+  /// whitespace*, and the PDF layer breaks lines on any of it — so a wrapped
+  /// bullet in a dispute pack printed "the Band D rate is ₦" at the end of one
+  /// line and "52,204." at the start of the next. Non-breaking to Flutter is
+  /// not non-breaking to every renderer, and the amount in dispute is the last
+  /// figure in the document that should be split in half.
+  ///
+  /// Closing the gap removes the break opportunity outright. At the 10pt the
+  /// pack sets, Inter's naira glyph clears the digits without help, and a
+  /// closed-up amount is how the figure is written in a Nigerian document
+  /// anyway.
+  String formatTight() => format().replaceAll(naira, '₦');
 }
 
 /// A tariff rate in kobo per kWh.

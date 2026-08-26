@@ -50,6 +50,15 @@ void main() {
           reason: 'a breaking thin space orphans the sign from the amount');
     });
 
+    test('formatTight closes the gap for renderers that break on it', () {
+      // The PDF layer treats U+202F as ordinary whitespace and wraps on it,
+      // so a dispute pack printed the sign at the end of one line and the
+      // amount at the start of the next.
+      expect(Naira.fromNaira(52204).formatTight(), '₦52,204');
+      expect(Naira.fromNaira(52204).formatTight().contains('\u202F'), isFalse);
+      expect(Naira.fromNaira(-1500).formatTight(), '-₦1,500');
+    });
+
     test('handles negatives', () {
       expect(Naira.fromNaira(-1500).format(), '-${Naira.naira}1,500');
     });

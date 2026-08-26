@@ -8,7 +8,9 @@ docs/*
 !docs/00-PRODUCT-STATEMENT.md
 !docs/ROADMAP.md
 !docs/JOURNAL.md
+!docs/FEATURE-BACKLOG.md
 !docs/adr/
+!docs/screenshots/
 
 # OS / editors
 .DS_Store

@@ -1,0 +1,43 @@
+# Three jobs, none of which need Flutter installed on the host.
+#
+#   docker compose run --rm verify   analyze + the full test suite
+#   docker compose run --rm apk      writes build/grid-debug.apk to the host
+#   docker compose run --rm shell    a toolchain prompt for poking at things
+#
+# iOS is absent on purpose — see the note at the top of the Dockerfile.
+services:
+  verify:
+    build:
+      context: .
+      target: verify
+    # The image already ran both on build; this re-runs them against whatever
+    # is currently mounted, which is what you want while actually working.
+    volumes:
+      - ./app:/app
+      - pub-cache:/root/.pub-cache
+    command: >
+      bash -lc "flutter analyze && flutter test"
+
+  apk:
+    build:
+      context: .
+      target: apk
+    volumes:
+      - ./build:/out
+      - pub-cache:/root/.pub-cache
+    command: >
+      bash -lc "cp build/app/outputs/flutter-apk/app-debug.apk /out/grid-debug.apk
+                && echo 'wrote build/grid-debug.apk'"
+
+  shell:
+    build:
+      context: .
+      target: base
+    volumes:
+      - ./app:/app
+      - pub-cache:/root/.pub-cache
+    command: bash
+
+volumes:
+  # Survives between runs so a rebuild is not another full package resolve.
+  pub-cache:

@@ -19,12 +19,45 @@ err()  { printf '%s✗%s %s\n' "$RED" "$OFF" "$1"; fail=$((fail+1)); }
 note() { printf '%s!%s %s\n' "$YEL" "$OFF" "$1"; warn=$((warn+1)); }
 ok()   { printf '%s✓%s %s\n' "$GRN" "$OFF" "$1"; }
 
-# --- 1. The required documents exist ---------------------------------------
-for f in README.md CLAUDE.md DESIGN.md CHANGELOG.md PHASE \
-         docs/ROADMAP.md docs/JOURNAL.md docs/00-PRODUCT-STATEMENT.md; do
+# --- 1. The required documents exist, and are actually tracked -------------
+#
+# "Exists on disk" is not the check that matters. `docs/*` is ignored with an
+# allow-list, so a new document lands in the working tree, passes every gate,
+# gets `git add -A`'d, reports a clean commit — and is not in the repository.
+# That happened to the feature backlog: written, gated, committed and absent
+# from GitHub for a day. The gate now asks git, not the filesystem.
+REQUIRED="README.md CLAUDE.md DESIGN.md CHANGELOG.md PHASE
+          docs/ROADMAP.md docs/JOURNAL.md docs/00-PRODUCT-STATEMENT.md
+          docs/FEATURE-BACKLOG.md"
+
+for f in $REQUIRED; do
   [ -f "$f" ] || err "missing $f"
 done
 [ "$fail" -eq 0 ] && ok "all required documents present"
+
+if [ -d .git ]; then
+  untracked=""
+  for f in $REQUIRED; do
+    [ -f "$f" ] || continue
+    git ls-files --error-unmatch "$f" >/dev/null 2>&1 || untracked="$untracked $f"
+  done
+  if [ -n "$untracked" ]; then
+    err "present but NOT TRACKED by git — .gitignore is swallowing them:$untracked"
+  else
+    ok "every required document is tracked, not just present"
+  fi
+
+  # Same trap, one level down: the screenshots the README embeds.
+  if [ -d docs/screenshots ]; then
+    shots=$(ls docs/screenshots/*.png 2>/dev/null | wc -l | tr -d ' ')
+    tracked=$(git ls-files docs/screenshots | wc -l | tr -d ' ')
+    if [ "$shots" != "$tracked" ]; then
+      err "docs/screenshots: $shots on disk, $tracked tracked — the README would render broken images on GitHub"
+    else
+      ok "$tracked screenshots tracked"
+    fi
+  fi
+fi
 
 # --- 2. PHASE is a number, and the roadmap describes it --------------------
 if [ -f PHASE ]; then

@@ -279,7 +279,7 @@ class PackRenderer {
             'On ${a.energy.format()} consumed in the period, the difference '
             'between the Band ${a.billedBand.label} rate and the Band '
             '${a.deliveredBand!.label} rate is '
-            '${a.overpayment!.format()}.',
+            '${a.overpayment!.formatTight()}.',
           );
           if (a.energyIsAllocated) {
             lines.add(
@@ -312,7 +312,7 @@ class PackRenderer {
     if (amount == null) {
       return 'The bill for this period does not match the meter record.';
     }
-    return 'A bill of ${amount.format()} against a metered consumption of '
+    return 'A bill of ${amount.formatTight()} against a metered consumption of '
         '${pack.consumption.total.format()}.';
   }
 

@@ -1,0 +1,17 @@
+# Everything the build does not read. Without this the context is a few
+# hundred megabytes of Pods, build output and simulator artefacts, and the
+# upload dominates the build.
+.git
+.github
+.githooks
+build/
+docs/
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/ios/Pods/
+**/ios/.symlinks/
+**/coverage/
+**/*.g.dart
+**/*.freezed.dart
+.DS_Store

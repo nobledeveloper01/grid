@@ -88,3 +88,18 @@ phase: ## Print the current phase and its exit gate
 	echo "Phase $$p"; \
 	awk -v want="## Phase $$p" '$$0 ~ want {inside=1} /^## Phase/ && $$0 !~ want {inside=0} inside' docs/ROADMAP.md \
 	  | grep -A6 '^\*\*Exit gate\*\*' || true
+
+# --- Docker: reproducible Android builds ------------------------------------
+# iOS is deliberately absent — Xcode does not run in a container. See Dockerfile.
+
+.PHONY: docker-verify docker-apk docker-shell
+
+docker-verify: ## analyze + the full suite on the pinned toolchain
+	docker compose run --rm verify
+
+docker-apk: ## build/grid-debug.apk, without Flutter installed on the host
+	@mkdir -p build
+	docker compose run --rm apk
+
+docker-shell: ## a toolchain prompt
+	docker compose run --rm shell
