@@ -1,10 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/appliance.dart';
+import '../../domain/entities/dispute_case.dart';
 import '../../domain/entities/meter.dart';
 import '../../domain/entities/reading.dart';
 import '../../domain/entities/supply_event.dart';
 import '../../domain/repositories/repositories.dart';
+import '../../domain/services/escalation_engine.dart';
 import '../local/database.dart';
 import '../local/hlc.dart';
 import '../local/mappers.dart';
@@ -285,6 +287,79 @@ class DriftSupplyRepository implements SupplyRepository {
           ),
         );
   }
+}
+
+class DriftDisputeCaseRepository implements DisputeCaseRepository {
+  DriftDisputeCaseRepository(this._db, this._clock);
+
+  final GridDatabase _db;
+  final HlcClock _clock;
+
+  @override
+  Stream<List<DisputeCase>> watchForMeter(String meterId) =>
+      (_db.select(_db.disputeCases)
+            ..where((c) => c.meterId.equals(meterId))
+            ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+          .watch()
+          .map((rows) => rows.map(_toDomain).toList());
+
+  @override
+  Future<List<DisputeCase>> getForMeter(String meterId) async {
+    final rows = await (_db.select(_db.disputeCases)
+          ..where((c) => c.meterId.equals(meterId))
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+        .get();
+    return rows.map(_toDomain).toList();
+  }
+
+  @override
+  Future<void> save(DisputeCase c) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _db.into(_db.disputeCases).insertOnConflictUpdate(
+          DisputeCasesCompanion.insert(
+            id: c.id,
+            meterId: c.meterId,
+            kind: c.kind,
+            step: c.step.name,
+            status: c.status.name,
+            periodStart: c.periodStart.millisecondsSinceEpoch,
+            periodEnd: c.periodEnd.millisecondsSinceEpoch,
+            submittedAt: Value(c.submittedAt?.millisecondsSinceEpoch),
+            reference: Value(c.reference),
+            notes: Value(c.notes),
+            packPath: Value(c.packPath),
+            createdAt: c.createdAt.millisecondsSinceEpoch,
+            hlc: _clock.issue(now).encode(),
+          ),
+        );
+  }
+
+  @override
+  Future<void> remove(String id) =>
+      (_db.delete(_db.disputeCases)..where((c) => c.id.equals(id))).go();
+
+  DisputeCase _toDomain(DisputeCaseRow r) => DisputeCase(
+        id: r.id,
+        meterId: r.meterId,
+        kind: r.kind,
+        step: EscalationStep.values.firstWhere(
+          (s) => s.name == r.step,
+          orElse: () => EscalationStep.businessUnit,
+        ),
+        status: CaseStatus.values.firstWhere(
+          (s) => s.name == r.status,
+          orElse: () => CaseStatus.open,
+        ),
+        periodStart: DateTime.fromMillisecondsSinceEpoch(r.periodStart),
+        periodEnd: DateTime.fromMillisecondsSinceEpoch(r.periodEnd),
+        submittedAt: r.submittedAt == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(r.submittedAt!),
+        reference: r.reference,
+        notes: r.notes,
+        packPath: r.packPath,
+        createdAt: DateTime.fromMillisecondsSinceEpoch(r.createdAt),
+      );
 }
 
 class DriftApplianceRepository implements ApplianceRepository {

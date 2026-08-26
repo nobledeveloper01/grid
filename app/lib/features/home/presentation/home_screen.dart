@@ -17,6 +17,7 @@ import '../../../shared/widgets/supply_strip.dart';
 import '../../meter/application/meter_providers.dart';
 import '../../supply/application/supply_inference_controller.dart';
 import '../../../shared/charts/trend_chart.dart';
+import '../../dispute/application/dispute_providers.dart';
 import '../../insights/application/insights_providers.dart';
 import '../widgets/hero_card.dart';
 import '../widgets/section_header.dart';
@@ -129,6 +130,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ],
 
+                _OpenCases(meterId: meter.id),
+
                 const SizedBox(height: Space.xl),
                 SectionHeader(
                   title: 'What you used',
@@ -211,6 +214,96 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// An open complaint, and what it is waiting for.
+///
+/// Surfaced on the home screen rather than buried in settings, because the
+/// whole value of tracking a case is that somebody is counting the days —
+/// and nobody counts days they have to go looking for.
+class _OpenCases extends ConsumerWidget {
+  const _OpenCases({required this.meterId});
+
+  final String meterId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final t = context.type;
+    final open = ref
+        .watch(trackedCasesProvider(meterId))
+        .where((x) => !x.caseRecord.isClosed)
+        .toList();
+    if (open.isEmpty) return const SizedBox.shrink();
+
+    final first = open.first;
+    final state = first.state;
+    final waiting = state.daysElapsed;
+
+    final line = switch ((waiting, state.canEscalate)) {
+      (null, _) => 'Ready to hand over.',
+      (final d, true) =>
+        '$d days with no answer — you can take it higher now.',
+      (final d, false) => 'Day $d at ${first.caseRecord.step.label}.',
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.xl),
+      child: Material(
+        color: c.surfaceRaised,
+        borderRadius: Radii.mdAll,
+        child: InkWell(
+          borderRadius: Radii.mdAll,
+          onTap: () => context.push(Routes.cases),
+          child: Container(
+            padding: const EdgeInsets.all(Space.lg),
+            decoration: BoxDecoration(
+              borderRadius: Radii.mdAll,
+              border: Border.all(
+                color: state.canEscalate
+                    ? c.warning.withValues(alpha: 0.35)
+                    : c.outline,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.folder_open_rounded,
+                  size: 20,
+                  color: state.canEscalate ? c.warning : c.textSecondary,
+                ),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        open.length == 1
+                            ? 'One case open'
+                            : '${open.length} cases open',
+                        style: t.body.copyWith(color: c.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        line,
+                        style: t.caption.copyWith(
+                          color: state.canEscalate
+                              ? c.warning
+                              : c.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: c.textTertiary),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -348,6 +441,12 @@ class _Greeting extends ConsumerWidget {
             icon: Icons.history_rounded,
             tooltip: 'Reading history',
             onPressed: () => context.push(Routes.readingHistory),
+          ),
+          const SizedBox(width: Space.sm),
+          _RoundIconButton(
+            icon: Icons.tune_rounded,
+            tooltip: 'Settings',
+            onPressed: () => context.push(Routes.settings),
           ),
         ],
       ),

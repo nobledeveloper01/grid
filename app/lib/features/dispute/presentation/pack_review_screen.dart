@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:go_router/go_router.dart';
+
+import '../../../core/router/router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/utils/formatters.dart';
@@ -252,7 +255,9 @@ class _PackReviewScreenState extends ConsumerState<PackReviewScreen> {
     setState(() => _busy = true);
     try {
       final file = await ref.read(packFileProvider(meterId).future);
-      if (!mounted) return;
+      final pack = ref.read(disputePackProvider(meterId));
+      if (!mounted || pack == null) return;
+
       // Nothing has left the device up to this point, and nothing does now
       // unless the user picks somewhere to send it.
       await SharePlus.instance.share(
@@ -261,6 +266,18 @@ class _PackReviewScreenState extends ConsumerState<PackReviewScreen> {
           subject: 'Electricity dispute pack',
         ),
       );
+
+      // A case opens on share, not on preview: a preview is somebody
+      // checking their own work, and a case list full of drafts is a case
+      // list nobody trusts.
+      await ref
+          .read(caseControllerProvider.notifier)
+          .open(pack: pack, packPath: file.path);
+      if (!mounted) return;
+      // `go` alone would leave the cases screen with nothing to go back to.
+      // Reset to home first, then push, so the back gesture lands somewhere.
+      context.go(Routes.home);
+      context.push(Routes.cases);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -10,6 +10,7 @@ import '../../data/repositories/drift_repositories.dart';
 import '../../domain/repositories/repositories.dart';
 import '../../domain/services/band_adherence_engine.dart';
 import '../../domain/services/compliance_engine.dart';
+import '../../domain/services/escalation_engine.dart';
 import '../../domain/services/consumption_engine.dart';
 import '../../domain/services/forecast_engine.dart';
 import '../../domain/services/load_model_engine.dart';
@@ -104,6 +105,16 @@ final applianceRepositoryProvider = Provider<ApplianceRepository>(
     ref.watch(hlcClockProvider),
   ),
 );
+
+final disputeCaseRepositoryProvider = Provider<DisputeCaseRepository>(
+  (ref) => DriftDisputeCaseRepository(
+    ref.watch(databaseProvider),
+    ref.watch(hlcClockProvider),
+  ),
+);
+
+final escalationEngineProvider =
+    Provider<EscalationEngine>((ref) => const EscalationEngine());
 
 final settingsRepositoryProvider = Provider<SettingsRepository>(
   (ref) => DriftSettingsRepository(ref.watch(databaseProvider)),

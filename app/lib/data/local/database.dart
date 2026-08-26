@@ -19,6 +19,7 @@ part 'database.g.dart';
     SupplyEvents,
     Appliances,
     BillingCycles,
+    DisputeCases,
     OutboxEntries,
     AppSettings,
   ],
@@ -28,12 +29,22 @@ class GridDatabase extends _$GridDatabase {
       : super(executor ?? driftDatabase(name: 'grid'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+          await _createIndices();
+        },
+        onUpgrade: (m, from, to) async {
+          // 1 → 2 adds dispute cases. Adding a table to the schema without
+          // bumping this leaves an existing install querying something that
+          // was never created — and it fails at the moment the user opens the
+          // feature, not at build time.
+          if (from < 2) {
+            await m.createTable(disputeCases);
+          }
           await _createIndices();
         },
         beforeOpen: (details) async {

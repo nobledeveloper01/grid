@@ -171,6 +171,49 @@ class OutboxEntries extends Table {
 /// Small key/value store for app preferences and engine bookkeeping
 /// (last compliance alert, reminder cadence, and so on).
 @DataClassName('AppSettingRow')
+/// A complaint in progress.
+///
+/// **State, not a fact.** A case moves — submitted, awaiting, escalated,
+/// resolved — and last write wins on the hybrid logical clock like every
+/// other piece of state. The evidence underneath it is what is immutable;
+/// the case is the user's own account of where it has got to, and they are
+/// entitled to correct that.
+@DataClassName('DisputeCaseRow')
+class DisputeCases extends Table {
+  TextColumn get id => text()();
+  TextColumn get meterId => text().references(Meters, #id)();
+
+  /// `PackKind.name`.
+  TextColumn get kind => text()();
+
+  /// `EscalationStep.name` — where the case currently sits.
+  TextColumn get step => text()();
+
+  /// `CaseStatus.name`.
+  TextColumn get status => text()();
+
+  IntColumn get periodStart => integer()();
+  IntColumn get periodEnd => integer()();
+
+  /// When the current step was handed over. Null until it has been.
+  IntColumn get submittedAt => integer().nullable()();
+
+  /// The DisCo's own reference, if they gave one. The single most useful
+  /// thing to have written down at the next step.
+  TextColumn get reference => text().nullable()();
+
+  TextColumn get notes => text().nullable()();
+
+  /// Where the generated PDF was written.
+  TextColumn get packPath => text().nullable()();
+
+  IntColumn get createdAt => integer()();
+  TextColumn get hlc => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class AppSettings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();

@@ -1,4 +1,5 @@
 import '../entities/appliance.dart';
+import '../entities/dispute_case.dart';
 import '../entities/meter.dart';
 import '../entities/reading.dart';
 import '../entities/supply_event.dart';
@@ -58,6 +59,13 @@ abstract interface class ApplianceRepository {
   Stream<List<Appliance>> watchForMeter(String meterId);
   Future<List<Appliance>> getForMeter(String meterId);
   Future<void> save(Appliance appliance);
+  Future<void> remove(String id);
+}
+
+abstract interface class DisputeCaseRepository {
+  Stream<List<DisputeCase>> watchForMeter(String meterId);
+  Future<List<DisputeCase>> getForMeter(String meterId);
+  Future<void> save(DisputeCase c);
   Future<void> remove(String id);
 }
 
