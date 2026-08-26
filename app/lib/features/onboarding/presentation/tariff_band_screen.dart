@@ -81,7 +81,7 @@ class _TariffBandScreenState extends ConsumerState<TariffBandScreen> {
             const SizedBox(height: Space.lg),
             Text(
               '${_estimatedHours.round()} hours',
-              style: t.display.copyWith(color: c.accent),
+              style: t.display.copyWith(color: c.brandDeep),
             ),
             Slider(
               value: _estimatedHours,

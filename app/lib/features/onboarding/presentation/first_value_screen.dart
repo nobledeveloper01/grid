@@ -60,7 +60,18 @@ class FirstValueScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.bolt, size: 56, color: c.accent),
+                // The brand mark, not the cool accent. This is the one
+                // celebratory moment in onboarding and it should look like
+                // the product it is introducing.
+                Container(
+                  padding: const EdgeInsets.all(Space.lg),
+                  decoration: BoxDecoration(
+                    gradient: c.heroGradient,
+                    borderRadius: Radii.lgAll,
+                    boxShadow: Shadows.glow(c.gradientEnd),
+                  ),
+                  child: Icon(Icons.bolt_rounded, size: 34, color: c.onBrand),
+                ),
                 const SizedBox(height: Space.xl),
                 Text(headline, style: t.headline),
                 const SizedBox(height: Space.md),
