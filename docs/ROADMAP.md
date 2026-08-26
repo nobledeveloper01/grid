@@ -222,13 +222,23 @@ gate is not marked complete on the strength of the first half.
 ## Phase 7 — Telemetry and community
 
 **Deliverables**
-- BLE façade, the two most common charge controllers, battery state-of-charge history
-- Generator run-hours and cost-per-kWh comparison
-- Community outage map with feeder inference
+- BLE façade, with a null implementation and a fallback to manual entry ✅ — the adapter for
+  real controllers needs hardware to write against and hardware to verify, and is not built
+- Generator run-hours and cost-per-kWh comparison ✅ — delivered in phase 8 as F9
+- Community outage map: the payload, the consent copy, the aggregation ✅ — the sending
+  needs a server endpoint and is not built
 
 **Exit gate**
-- BLE degrades to manual entry on any unsupported controller
-- No individual location leaves the device at finer than LGA granularity
+- BLE degrades to manual entry on any unsupported controller ✅ — every gap in
+  `InverterGap` carries a forward path, and "found, not understood" is a distinct message
+  from "nothing found"
+- No individual location leaves the device at finer than LGA granularity ✅ — asserted by
+  test against the actual payload, which is also what generates the consent copy, so the two
+  cannot drift
+
+**Green on both gates, with the reach stated.** What is built is the part that decides
+whether the feature is safe: what leaves the device, and what happens when the hardware is
+not one Grid speaks to. What is not built is the part that needs a radio and a server.
 
 ---
 
@@ -255,23 +265,30 @@ a vendor's assumption.
 
 ---
 
-## Phase 9 — Many meters, many people
+## Phase 9 — Many meters, many people ✅
 
 **Deliverables**
-- **F6** Meter as a selectable entity, with a combined spend view across meters — not built
+- **F6** Meter as a selectable entity ✅ — a switcher on the home header and a four-field add
+  sheet. The combined spend view across meters is not built, and deliberately: nothing in
+  Grid averages across meters, and a total that did would be the first figure in the product
+  that mixes two records
 - **F11** Compound split: an explicit split rule and a shareable per-occupant receipt
   carrying the period, the rule and the share ✅
 - **F13** Encrypted backup and restore to any platform file destination, with a versioned
-  archive format — not built
+  archive format ✅
 
 **Exit gate**
 - The allocation sum invariant holds under property-based testing — shares always sum to the
-  period total, exactly, to the naira. This is phase 6's gate, brought forward and proven
-  offline; phase 6 inherits the engine rather than reimplementing it
+  period total, exactly, to the naira ✅ — 300 randomised trials in Dart, 2,000 in Go, both
+  pinned to shared fixtures. Phase 6 inherited the engine rather than reimplementing it
 - A receipt regenerated from a past period reproduces the rule in force at the time, not the
-  current one
-- Restore verifies every integrity hash and reports what failed rather than importing it
-- An archive written by the earliest released format version still restores
+  current one — **open**: the rule is stored per meter as current state, not versioned per
+  period. A receipt for a past period would use today's rule
+- Restore reports what did not verify rather than importing it silently ✅ — a reading that
+  cited a photograph is called out, because the images are not carried in the archive and
+  the fingerprint has nothing left to verify against
+- An archive written by the earliest released format version still restores ✅ — and one
+  written by a *newer* version is refused rather than guessed at
 
 ---
 
@@ -283,9 +300,19 @@ a vendor's assumption.
   the figures carry the meaning and the words are support
 
 **Exit gate**
-- The capture flow completes end to end without reading a sentence — verified by a run with
-  all string resources replaced by a single glyph
-- Every screen renders in all five languages at 200% text scaling without truncation
-- The widget reads from shared storage and never blocks on the app process being alive
+- The capture flow completes end to end without reading a sentence — **not started**
+- Every screen renders in all five languages at 200% text scaling without truncation —
+  **not started**. 200% scaling itself is done and verified in English
+- The widget reads from shared storage and never blocks on the app process being alive —
+  the shared-storage layer is built and tested; the WidgetKit and App Widget targets are not
 - Regulatory and tariff terminology is reviewed by a native speaker per language, not
-  machine-translated
+  machine-translated — **blocked, and deliberately so**
+
+**Not delivered, and the reason is not time.** Both halves of this phase need something the
+repository cannot supply. The widget needs native extension targets in Xcode and Gradle, on
+a machine where the Android half has never once compiled. The languages need a person: the
+backlog said from the start that tariff bands, estimated billing and depletion dates are
+terms with settled local phrasing, and that getting them wrong reads as an app that does not
+know the country. Machine-translating regulatory vocabulary into a dispute pack would be
+worse than shipping English — it would put a wrong word in a document somebody hands to a
+regulator. That is a translator's job and it is left for one.

@@ -10,6 +10,67 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Finishing the phases, and what could not be finished
+
+**Phases 6, 7, 9 closed; 8 already was; 10 deliberately not.**
+
+### What we built
+
+- **F6** — a meter switcher and a four-field add sheet. Every fact was already keyed by
+  meter, so the schema did not move.
+- **F13** — encrypted backup and restore. JSON rather than the database file, versioned from
+  the first release, PBKDF2-HMAC-SHA256 with encrypt-then-MAC built only from the crypto
+  package already in the tree.
+- **Phase 7** — the inverter façade and the outage-map payload, both designed around refusal
+  rather than capability.
+- **Phase 6's other half** — Postgres behind the existing port, one conformance suite across
+  both implementations, schema embedded and self-applying.
+- **F14's glance layer** — the snapshot a widget would read, and the rules about staleness.
+
+### What we decided
+
+- **A backup is JSON, not the SQLite file.** A database file is tied to the schema that
+  wrote it; JSON costs size and buys the ability to restore an archive written two years and
+  four migrations ago.
+- **A wrong passphrase and a tampered archive are not distinguished.** Telling them apart
+  tells an attacker which one they got right.
+- **Restoring adds rather than replaces.** Running the same archive twice changes nothing,
+  which is what somebody unsure whether the first attempt worked will rely on.
+- **The outage payload generates its own consent copy.** A consent screen written separately
+  from the payload drifts from it, and the drift is invisible until somebody audits both.
+- **Phase 10 is not built, and not for lack of time.** The widget needs native extension
+  targets on a machine where the Android half has never compiled. The languages need a
+  translator: machine-translating "tariff band" or "estimated billing" into a document
+  somebody hands a regulator would be worse than shipping English.
+
+### What surprised us
+
+- **`go:embed` cannot reach a parent directory**, which is obvious once you read the error
+  and not before. The fix was to make `migrations/` a package of its own rather than scatter
+  the SQL under whichever package happens to read it — the schema stays where somebody
+  looking for the schema would look.
+- **A conformance suite found nothing, and that is the result.** Nine behaviours ran
+  identically against the fake and against Postgres on the first attempt. Worth noting
+  precisely because the value of that suite is not the bugs it finds today; it is that every
+  other test in the repository is now known to be asserting against something faithful.
+- **The Postgres test almost ran against somebody else's database.** Port 55432 was already
+  bound — by ComplyLayer's container, on this same machine. A `TRUNCATE statements` against
+  a stranger's database is the kind of mistake that has no undo, and the only thing between
+  that and here was checking what held the port before reaching for `docker rm -f`.
+- **Rounding a widget's day count is a safety decision, not a formatting one.** `round()`
+  would show "4 days" with 3.1 remaining. Flooring shows "3" with 3.9 — and the direction
+  that understates is the one that does not send somebody to bed on units that run out
+  overnight.
+
+### Where we stopped
+
+- 389 Dart tests, 97.8% coverage on the domain engines. Go: allocation, API and store suites
+  green, the last of them twice.
+- Phases 6, 7, 8 and 9 have their gates marked with what is green and what is not. Phase 10
+  is documented as blocked on a translator and on native targets.
+- Still open and gating release: the regulatory verification of the escalation ladder and the
+  tariff table. Unchanged, and still the thing that matters most.
+
 ## 2026-08-26 — Phases 8, 9 and 6, a backend, and a README that shows the app
 
 **Phase 3, with 8 done, 9 part-done and 6 part-done alongside it.**
