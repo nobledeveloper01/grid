@@ -49,8 +49,17 @@ regardless of what it delivers.
 - **Swift Package Manager is disabled for this project.** Mixing it with CocoaPods-only
   plugins produces `Framework 'Pods_Runner' not found`, which reads as a signing problem
   and is not one.
+- **`flutter run --dart-define=GRID_DEMO=true`** seeds a demo household. It is compiled out
+  without the flag and refuses to run against a database that already holds a meter. Almost
+  no screen can be judged against the two readings a fresh install has.
 - The domain engines carry a **95% coverage gate**. They are the product; the UI renders
   what they decide.
+- **`ConsumptionEngine.series` clips to the window it is given.** `total` is the window's
+  total, not the history's. That is enforced there because two call sites had already made
+  the opposite assumption and produced figures three times too large without anything
+  looking wrong on screen.
+- **A day in progress is never averaged in as a whole day**, and its unobserved remainder is
+  not a gap in the record — it is a clock that has not got there yet.
 - Prefer a sealed result over a nullable one wherever the UI could otherwise render a
   misleading figure. `BalanceUnavailable` exists so no screen can display "your units finish
   on null".
@@ -81,7 +90,8 @@ project that is documented and a project that has documentation.
 - [ ] Verified on physical iOS **and** physical Android
 - [ ] Verified on the reference low-end Android (2 GB RAM)
 - [ ] Light and dark both authored
-- [ ] 200% text scaling without truncation
+- [ ] 200% text scaling without truncation — check it, do not assume it. Seven rows across
+      six screens overflowed the first time anybody actually looked
 - [ ] Screen-reader labelled; colour never the sole carrier of meaning
 - [ ] Every error path has a forward path — no dead ends
 - [ ] No update or delete path introduced on a fact

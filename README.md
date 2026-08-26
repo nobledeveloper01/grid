@@ -17,18 +17,39 @@ analysis and the reasoning behind the product.
 
 ## Status
 
-Phase 1 of 8 — capture and forecast. Running on device.
+Phase 3 of 12 — supply and compliance — with most of 3.5, 4 and 5 built alongside it. The
+product is usable end to end: install, log a reading, and it will take you all the way to a
+dispute pack you can hand over.
 
 | Working | Not yet built |
 |---|---|
-| Onboarding: meter type, DisCo, tariff band | Camera capture and OCR |
-| Manual reading entry with live validation | Automatic supply inference |
-| Prepaid depletion forecast, postpaid cost projection | Consumption charts |
-| Supply logging, band compliance, coverage reporting | Appliance inventory and load attribution |
-| Prepaid purchase recording with effective-rate detection | Dispute pack generation |
-| Reading history with evidence flags | Landlord console and bill allocation |
+| Onboarding: meter type, DisCo, tariff band | OCR accuracy gate (needs physical hardware) |
+| Reading capture — camera with OCR, or the outdoor keypad | **F2** Bill capture and reconciliation |
+| Prepaid depletion forecast, postpaid cost projection | **F3** Estimated-bill cap check |
+| Supply inference from charging state, with honest coverage | **F1** Token vault · **F5** Vendor watch |
+| Band adherence: the shortfall, valued in naira | Phases 8–10: generator and solar economics, many meters, more languages |
+| Insights: scrubbable trend chart, appliance load attribution | Phase 6: backend, sync, landlord console |
+| **Dispute packs** — four templates, rendered to PDF | Phase 7: BLE telemetry, community outage map |
+| Case tracking with the escalation clock running | |
+| Budget mode, reading reminders, settings | |
 
-**139 tests passing. Domain engines at 100% line coverage.**
+**265 tests passing. Domain engines at 98% line coverage.**
+
+See [`CHANGELOG.md`](CHANGELOG.md) for what changed and why, [`docs/ROADMAP.md`](docs/ROADMAP.md)
+for the phases and their gates, and [`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md) for the
+fifteen features that were sourced, costed and phased — including the five that were cut, and
+the reasons, which will be needed again the next time somebody proposes them.
+
+### Seeing it with data
+
+Every screen in Grid is a function of months of accumulated facts, and a fresh install has two
+readings. A demo household — ninety days of readings, forty of supply, an appliance inventory
+and one deliberately anomalous reading — is compiled in only under a flag, and refuses to run
+against a database that already holds a meter:
+
+```
+flutter run --dart-define=GRID_DEMO=true
+```
 
 ---
 
