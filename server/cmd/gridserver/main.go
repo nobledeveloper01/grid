@@ -9,8 +9,10 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,6 +20,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/nobledeveloper01/grid/server/internal/api"
 	"github.com/nobledeveloper01/grid/server/internal/store"
@@ -50,7 +54,11 @@ func main() {
 			"Tenant links still work; they are authorised by the token alone.")
 	}
 
-	st := store.NewMemory()
+	st, err := openStore(log)
+	if err != nil {
+		log.Error("could not open the store", "error", err)
+		os.Exit(1)
+	}
 	defer func() { _ = st.Close() }()
 
 	srv := &http.Server{
@@ -108,6 +116,46 @@ func probe(addr string) int {
 		return 1
 	}
 	return 0
+}
+
+// openStore picks Postgres when there is a database to talk to, and memory
+// when there is not.
+//
+// Memory is the default on purpose. This server exists to be looked at as
+// much as to be run, and a reviewer who has to provision Postgres before the
+// tenant page will render is a reviewer who does not render the tenant page.
+// The trade — a restart loses issued links — is stated in the log rather than
+// discovered.
+func openStore(log *slog.Logger) (store.Store, error) {
+	url := os.Getenv("GRID_DATABASE_URL")
+	if url == "" {
+		log.Warn("no GRID_DATABASE_URL — statements are held in memory and " +
+			"a restart will lose every issued link. Fine for a demonstration, " +
+			"not for anything a tenant is relying on.")
+		return store.NewMemory(), nil
+	}
+
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		return nil, fmt.Errorf("opening the database: %w", err)
+	}
+
+	// Fail here rather than on the first request. A server that starts
+	// happily and then 500s the moment a tenant opens a link is harder to
+	// diagnose than one that refuses to start.
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("reaching the database: %w", err)
+	}
+
+	pg := store.NewPostgres(db)
+	if err := pg.Migrate(ctx); err != nil {
+		return nil, fmt.Errorf("applying the schema: %w", err)
+	}
+
+	log.Info("using postgres")
+	return pg, nil
 }
 
 func env(key, fallback string) string {

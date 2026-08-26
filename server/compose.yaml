@@ -3,14 +3,14 @@
 #   docker compose up --build
 #   open http://localhost:8080/healthz
 #
-# Statements live in memory by default, so this comes up with no database to
-# provision and nothing to migrate. That is the right default for something
-# whose purpose is to be clicked on: a portfolio reviewer who has to stand up
-# Postgres before they can see the page will not see the page.
+# Postgres is included and used. `GRID_DATABASE_URL` unset would fall back to
+# memory, which is fine for a look-around and loses every issued link on
+# restart — so the compose file wires the database rather than leaving the
+# lesser default in the file people copy.
 #
-# The trade is that a restart loses issued links. Postgres goes behind the same
-# `store.Store` interface when that matters — the port exists precisely so the
-# swap is a constructor change and no handler moves.
+# The schema applies itself at boot from migrations embedded in the binary, so
+# there is no separate migrate step and no way to run a container against a
+# schema it does not match.
 services:
   server:
     build:
@@ -20,13 +20,34 @@ services:
       - "8080:8080"
     environment:
       GRID_ADDR: ":8080"
+      GRID_DATABASE_URL: "postgres://grid:grid@db:5432/grid?sslmode=disable"
       # landlord:key pairs. Change this before it is anywhere but a laptop —
       # it is the only thing standing between a stranger and the ability to
       # issue statements in somebody else's name.
       GRID_API_KEYS: "demo-landlord:change-me"
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "/gridserver", "-healthcheck"]
       interval: 10s
       timeout: 3s
       retries: 3
       start_period: 2s
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: grid
+      POSTGRES_PASSWORD: grid
+      POSTGRES_DB: grid
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grid -d grid"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
