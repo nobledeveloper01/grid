@@ -2,6 +2,21 @@ import Flutter
 import UIKit
 import Vision
 
+/// A one-shot latch, so a Flutter reply can never be sent twice.
+private final class Replied {
+    private var done = false
+    private let lock = NSLock()
+
+    /// Returns true exactly once.
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if done { return false }
+        done = true
+        return true
+    }
+}
+
 /// On-device text recognition using Apple's Vision framework.
 ///
 /// Vision rather than ML Kit deliberately: ML Kit's iOS pods ship no arm64
@@ -48,14 +63,33 @@ final class TextRecogniserPlugin: NSObject, FlutterPlugin {
                 ))
                 return
             }
-            recognise(path: path, result: result)
+            recognise(path: path, rawResult: result)
 
         default:
             result(FlutterMethodNotImplemented)
         }
     }
 
-    private func recognise(path: String, result: @escaping FlutterResult) {
+    private func recognise(path: String, rawResult: @escaping FlutterResult) {
+        // FlutterResult must be called exactly once, on the platform thread.
+        //
+        // Vision runs its completion handler on whatever queue performed the
+        // request — a background one here — and calling back into Flutter from
+        // there is undefined behaviour. Worse, `perform` can throw *after* the
+        // completion handler has already fired, which would reply twice and
+        // trip Flutter's "reply already submitted" fatal error.
+        //
+        // This wrapper hops to main and drops everything after the first call.
+        let replied = Replied()
+        let result: FlutterResult = { value in
+            guard replied.claim() else { return }
+            if Thread.isMainThread {
+                rawResult(value)
+            } else {
+                DispatchQueue.main.async { rawResult(value) }
+            }
+        }
+
         guard
             let image = UIImage(contentsOfFile: path),
             let cgImage = image.cgImage
@@ -106,7 +140,7 @@ final class TextRecogniserPlugin: NSObject, FlutterPlugin {
             do {
                 try handler.perform([request])
             } catch {
-                DispatchQueue.main.async { result([]) }
+                result([])
             }
         }
     }

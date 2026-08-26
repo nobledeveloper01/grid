@@ -49,11 +49,15 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
     if (state == AppLifecycleState.inactive) {
+      if (controller == null) return;
+      // Clear the field *before* disposing. A disposed CameraController keeps
+      // reporting `value.isInitialized == true`, so leaving the reference in
+      // place lets the next build hand a dead controller to CameraPreview.
+      setState(() => _controller = null);
       controller.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      _start();
+      if (_controller == null) _start();
     }
   }
 
@@ -79,11 +83,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       );
       await controller.initialize();
       await controller.setFocusMode(FocusMode.auto);
-      if (!mounted) return;
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      // Two _start() calls can overlap (lifecycle + initState). Whichever
+      // finishes second must not orphan the first controller.
+      final existing = _controller;
       setState(() {
         _controller = controller;
         _failure = null;
       });
+      await existing?.dispose();
     } on CameraException catch (e) {
       if (!mounted) return;
       setState(() {

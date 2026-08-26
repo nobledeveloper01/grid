@@ -38,6 +38,22 @@ class _ConfirmReadingScreenState extends ConsumerState<ConfirmReadingScreen> {
   bool _edited = false;
   bool _saving = false;
 
+  /// Set once the photograph belongs to a saved reading. Until then, leaving
+  /// this screen by any route — Retake, the back button, or the system back
+  /// gesture — discards it. Storage is scarce on the devices this ships to,
+  /// and abandoned captures would accumulate silently.
+  bool _committed = false;
+
+  @override
+  void dispose() {
+    if (!_committed) {
+      ref
+          .read(captureControllerProvider.notifier)
+          .discard(widget.capture.photoPath);
+    }
+    super.dispose();
+  }
+
   Kwh? get _value {
     if (_entry.isEmpty) return null;
     final parsed = double.tryParse(_entry);
@@ -186,13 +202,8 @@ class _ConfirmReadingScreenState extends ConsumerState<ConfirmReadingScreen> {
     );
   }
 
-  Future<void> _discard() async {
-    await ref
-        .read(captureControllerProvider.notifier)
-        .discard(widget.capture.photoPath);
-    if (!mounted) return;
-    context.pop();
-  }
+  /// Retake. `dispose` does the deleting, so this only has to leave.
+  void _discard() => context.pop();
 
   Future<void> _save(
     String meterId,
@@ -201,6 +212,10 @@ class _ConfirmReadingScreenState extends ConsumerState<ConfirmReadingScreen> {
   ) async {
     setState(() => _saving = true);
     final reading = widget.capture.reading;
+
+    // Hand the photograph over to the reading before leaving, so dispose does
+    // not delete a file the saved record now points at.
+    _committed = true;
 
     await ref.read(readingControllerProvider.notifier).add(
           meterId: meterId,
@@ -253,6 +268,10 @@ class _ReadingField extends StatelessWidget {
                   ? 'Reading $entry'
                   : 'Reading $entry. Some digits are uncertain, please check',
               child: RichText(
+                // RichText does not inherit MediaQuery.textScaler the way
+                // Text does, so without this the reading is the one thing on
+                // the screen that ignores the user's text size.
+                textScaler: MediaQuery.textScalerOf(context),
                 text: TextSpan(
                   children: [
                     for (var i = 0; i < entry.length; i++)
