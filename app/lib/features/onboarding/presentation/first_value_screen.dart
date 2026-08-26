@@ -7,6 +7,7 @@ import '../../../core/theme/theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../domain/value_objects/enums.dart';
 import '../../../features/meter/application/meter_providers.dart';
+import '../../../core/config/providers.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 
 /// The payoff screen, immediately after the meter is created.
@@ -103,9 +104,24 @@ class FirstValueScreen extends ConsumerWidget {
           const SizedBox(height: Space.lg),
         ],
       ),
-      bottom: FilledButton(
-        onPressed: () => context.go(Routes.home),
-        child: const Text('Log my first reading'),
+      // The button did what the next screen does, not what it says: it went
+      // to the home screen and left the user to find the reading flow
+      // themselves. A first-run call to action that does not do the thing it
+      // names is the worst possible place to lose somebody.
+      bottom: Consumer(
+        builder: (context, ref, _) {
+          final ocr = ref.watch(ocrAvailableProvider).value ?? false;
+          return FilledButton.icon(
+            onPressed: () {
+              // Home first, so the back gesture out of the capture screen
+              // lands somewhere rather than on the onboarding it just left.
+              context.go(Routes.home);
+              context.push(ocr ? Routes.capture : Routes.manualEntry);
+            },
+            icon: Icon(ocr ? Icons.camera_alt_rounded : Icons.add_rounded),
+            label: const Text('Log my first reading'),
+          );
+        },
       ),
     );
   }
