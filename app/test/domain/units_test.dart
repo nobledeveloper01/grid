@@ -38,10 +38,16 @@ void main() {
       expect(Naira.zero.format(), '${n}0');
     });
 
-    test('the naira sign is followed by a thin space, not a plain one', () {
-      expect(Naira.naira, '₦\u2009');
+    test('the naira sign is followed by a narrow no-break space', () {
+      // Thin space (U+2009) kerned correctly but allowed a line break, so a
+      // wrapped amount in the dispute pack printed the sign at the end of
+      // one line and the figure at the start of the next. U+202F kerns the
+      // same and does not break.
+      expect(Naira.naira, '₦\u202F');
       expect(Naira.naira.contains(' '), isFalse,
           reason: 'a normal space would look like a gap, not like kerning');
+      expect(Naira.naira.contains('\u2009'), isFalse,
+          reason: 'a breaking thin space orphans the sign from the amount');
     });
 
     test('handles negatives', () {

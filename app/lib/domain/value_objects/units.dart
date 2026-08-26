@@ -80,7 +80,7 @@ extension type const Naira._(int kobo) implements Object {
   /// which on a bill is exactly the wrong impression. A hair of space clears
   /// the bars without looking like a gap. Verified on device at 12, 16, 20
   /// and 28sp.
-  static const String naira = '₦\u2009';
+  static const String naira = '₦\u202F';
 
   /// Naira with thousands separators, no kobo. Kobo are noise at the
   /// magnitudes this product deals in.

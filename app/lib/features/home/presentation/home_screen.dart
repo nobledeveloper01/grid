@@ -116,6 +116,16 @@ class HomeScreen extends ConsumerWidget {
                         'promises ${compliance.band.committedHours} hours a '
                         "day. You've been getting "
                         '${formatHours(compliance.summary.rollingAverageHours)}.',
+                    actions: [
+                      TextButton(
+                        onPressed: () => context.push(Routes.supplyTimeline),
+                        child: const Text('See the log'),
+                      ),
+                      FilledButton.tonal(
+                        onPressed: () => context.push(Routes.dispute),
+                        child: const Text('Build a pack'),
+                      ),
+                    ],
                   ),
                 ],
 

@@ -15,6 +15,8 @@ import '../../features/reading/presentation/manual_entry_screen.dart';
 import '../../features/reading/presentation/reading_history_screen.dart';
 import '../../features/reading/presentation/purchase_entry_screen.dart';
 import '../../features/appliances/presentation/appliance_screen.dart';
+import '../../features/dispute/presentation/dispute_screen.dart';
+import '../../features/dispute/presentation/pack_review_screen.dart';
 import '../../features/insights/presentation/insights_screen.dart';
 import '../../features/supply/presentation/supply_timeline_screen.dart';
 
@@ -34,6 +36,8 @@ abstract final class Routes {
   static const supplyTimeline = '/supply';
   static const insights = '/insights';
   static const appliances = '/appliances';
+  static const dispute = '/dispute';
+  static const disputeReview = '/dispute/review';
 }
 
 /// Bridges a Riverpod provider to GoRouter's [Listenable]-based refresh.
@@ -128,6 +132,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.appliances,
         builder: (context, state) => const ApplianceScreen(),
+      ),
+      GoRoute(
+        path: Routes.dispute,
+        builder: (context, state) => const DisputeScreen(),
+        routes: [
+          GoRoute(
+            path: 'review',
+            builder: (context, state) => const PackReviewScreen(),
+          ),
+        ],
       ),
     ],
   );

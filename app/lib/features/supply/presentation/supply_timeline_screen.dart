@@ -5,6 +5,10 @@ import '../../../core/config/providers.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/utils/formatters.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/router/router.dart';
+import '../../../domain/services/band_adherence_engine.dart';
 import '../../../domain/services/compliance_engine.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
@@ -51,6 +55,26 @@ class SupplyTimelineScreen extends ConsumerWidget {
         children: [
           if (adherence != null) ...[
             BandAdherenceCard(adherence: adherence),
+            if (adherence is AdherenceShortfall) ...[
+              const SizedBox(height: Space.md),
+              // The forward path. A screen that establishes a shortfall and
+              // then leaves the user to work out what to do with it has done
+              // the hard part and stopped one step short of the point.
+              SizedBox(
+                width: double.infinity,
+                // Outlined, not filled. The bottom bar already holds the
+                // one primary action on this screen, and two solid amber
+                // buttons in view at once means neither is primary.
+                child: SizedBox(
+                  height: Targets.control,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(Routes.dispute),
+                    icon: const Icon(Icons.description_outlined, size: 18),
+                    label: const Text('Build a dispute pack'),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: Space.lg),
           ] else ...[
             // No band on the meter, so there is nothing to hold the DisCo
