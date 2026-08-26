@@ -10,6 +10,7 @@ import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
 import '../../meter/application/meter_providers.dart';
 import '../application/supply_controller.dart';
+import '../widgets/band_adherence_card.dart';
 
 /// The power log.
 ///
@@ -31,7 +32,7 @@ class SupplyTimelineScreen extends ConsumerWidget {
     }
 
     final events = ref.watch(supplyEventsProvider(meter.id)).value ?? const [];
-    final compliance = ref.watch(complianceProvider(meter.id));
+    final adherence = ref.watch(bandAdherenceProvider(meter.id));
     final ongoing = ref.watch(ongoingSupplyProvider(meter.id));
     final now = ref.watch(clockProvider)();
 
@@ -48,7 +49,13 @@ class SupplyTimelineScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: Space.lg),
         children: [
-          if (compliance != null) ...[
+          if (adherence != null) ...[
+            BandAdherenceCard(adherence: adherence),
+            const SizedBox(height: Space.lg),
+          ] else ...[
+            // No band on the meter, so there is nothing to hold the DisCo
+            // to. Still show what was measured — the log is worth keeping
+            // either way.
             Container(
               padding: const EdgeInsets.all(Space.xl),
               decoration: BoxDecoration(
@@ -59,27 +66,20 @@ class SupplyTimelineScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Average over 30 days',
-                    style: t.label.copyWith(color: c.textSecondary),
+                    'AVERAGE OVER 30 DAYS',
+                    style: t.label
+                        .copyWith(color: c.textSecondary, letterSpacing: 0.8),
                   ),
                   const SizedBox(height: Space.sm),
                   Text(
                     formatHours(summary.rollingAverageHours),
-                    style: t.display.copyWith(
-                      color: compliance.isBreach ? c.warning : c.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: Space.sm),
-                  Text(
-                    compliance.band.commitment,
-                    style: t.body.copyWith(color: c.textSecondary),
+                    style: t.display.copyWith(color: c.textPrimary),
                   ),
                   const SizedBox(height: Space.md),
-                  // Coverage is stated plainly, always.
                   Text(
-                    'Based on ${summary.usableDayCount} days with enough data. '
-                    'This log covers ${formatPercent(summary.coverage)} of the '
-                    'period.',
+                    'Based on ${summary.usableDayCount} days with enough '
+                    'data, covering ${formatPercent(summary.coverage)} of '
+                    'the period.',
                     style: t.caption.copyWith(color: c.textTertiary),
                   ),
                 ],
@@ -95,7 +95,7 @@ class SupplyTimelineScreen extends ConsumerWidget {
                   'record starts building.',
             )
           else
-            for (final day in days) _DayRow(day: day),
+            for (final day in days) _DayRow(day: day, now: now),
 
           const SizedBox(height: Space.xxxl),
         ],
@@ -120,9 +120,20 @@ class SupplyTimelineScreen extends ConsumerWidget {
 }
 
 class _DayRow extends StatelessWidget {
-  const _DayRow({required this.day});
+  const _DayRow({required this.day, required this.now});
 
   final DailySupply day;
+  final DateTime now;
+
+  /// Today is scored against a full 24 hours like every other day, which is
+  /// correct for compliance and wrong on screen: at 03:00 a perfectly
+  /// observed morning has 12% coverage and renders as "No data". The day is
+  /// not missing, it is in progress, and saying so is the difference between
+  /// a log that looks broken every morning and one that does not.
+  bool get _isToday =>
+      day.date.year == now.year &&
+      day.date.month == now.month &&
+      day.date.day == now.day;
 
   @override
   Widget build(BuildContext context) {
@@ -136,8 +147,13 @@ class _DayRow extends StatelessWidget {
           SizedBox(
             width: 96,
             child: Text(
-              '${weekdayName(day.date).substring(0, 3)} ${day.date.day}',
-              style: t.caption.copyWith(color: c.textSecondary),
+              _isToday
+                  ? 'Today'
+                  : '${weekdayName(day.date).substring(0, 3)} '
+                      '${day.date.day}',
+              style: t.caption.copyWith(
+                color: _isToday ? c.textPrimary : c.textSecondary,
+              ),
             ),
           ),
           Expanded(
@@ -173,7 +189,12 @@ class _DayRow extends StatelessWidget {
                   if (day.unknownMinutes > 0)
                     Expanded(
                       flex: day.unknownMinutes,
-                      child: ColoredBox(color: c.supplyUnknown),
+                      // On today, the remaining minutes have not happened
+                      // yet. Painting them as unobserved would claim a gap
+                      // in the record where there is only a clock.
+                      child: ColoredBox(
+                        color: _isToday ? c.track : c.supplyUnknown,
+                      ),
                     ),
                 ],
               ),
@@ -181,12 +202,20 @@ class _DayRow extends StatelessWidget {
           ),
           const SizedBox(width: Space.md),
           SizedBox(
-            width: 64,
+            width: 92,
             child: Text(
-              day.isUsable ? formatHours(day.hours) : 'No data',
+              switch ((_isToday, day.isUsable)) {
+                (true, _) => '${formatHours(day.hours)} so far',
+                (false, true) => formatHours(day.hours),
+                (false, false) => 'No data',
+              },
               textAlign: TextAlign.right,
               style: t.caption.copyWith(
-                color: day.isUsable ? c.textPrimary : c.textTertiary,
+                color: _isToday
+                    ? c.textSecondary
+                    : day.isUsable
+                        ? c.textPrimary
+                        : c.textTertiary,
               ),
             ),
           ),

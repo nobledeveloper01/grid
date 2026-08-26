@@ -214,4 +214,84 @@ void main() {
       );
     });
   });
+
+  group('the day in progress', () {
+    const engine = ComplianceEngine();
+
+    // 03:00 on the current day, with the small hours fully observed.
+    final earlyMorning = DateTime(2026, 8, 26, 3);
+
+    SupplySummary summariseToday() => engine.summarise(
+          events: [
+            supply(
+              id: 'today',
+              state: SupplyState.available,
+              from: DateTime(2026, 8, 26),
+              to: earlyMorning,
+            ),
+          ],
+          windowStart: DateTime(2026, 8, 26),
+          windowEnd: earlyMorning,
+          now: earlyMorning,
+        );
+
+    test('is scored against the clock, not against 24 hours', () {
+      final day = summariseToday().days.single;
+      expect(day.isPartialDay, isTrue);
+      expect(day.observableMinutes, 180);
+      expect(day.coverage, 1.0,
+          reason: 'three hours observed out of three hours elapsed');
+    });
+
+    test('is never usable as a day of supply hours, however well observed',
+        () {
+      // Three hours of power by 03:00 is not a three-hour day, and averaging
+      // it in as one would understate every figure downstream.
+      expect(summariseToday().days.single.isUsable, isFalse);
+    });
+
+    test('does not drag the window coverage down', () {
+      // Thirty days fully observed plus a well-observed partial day should
+      // read as full coverage — not as 29/30ths of it.
+      final events = <SupplyEvent>[];
+      for (var d = 30; d >= 1; d--) {
+        final start = DateTime(2026, 8, 26).subtract(Duration(days: d));
+        events.add(supply(
+          id: 'd\$d',
+          state: SupplyState.available,
+          from: start,
+          to: start.add(const Duration(days: 1)),
+        ));
+      }
+      events.add(supply(
+        id: 'today',
+        state: SupplyState.available,
+        from: DateTime(2026, 8, 26),
+        to: earlyMorning,
+      ));
+
+      final s = engine.summarise(
+        events: events,
+        windowStart: DateTime(2026, 8, 26).subtract(const Duration(days: 30)),
+        windowEnd: earlyMorning,
+        now: earlyMorning,
+      );
+
+      expect(s.coverage, closeTo(1.0, 1e-9));
+      expect(s.usableDayCount, 30, reason: 'today is not one of them');
+    });
+
+    test('a future day inside the window is observable for zero minutes', () {
+      final s = engine.summarise(
+        events: const [],
+        windowStart: DateTime(2026, 8, 26),
+        windowEnd: DateTime(2026, 8, 28),
+        now: earlyMorning,
+      );
+      final tomorrow = s.days[1];
+      expect(tomorrow.observableMinutes, 0);
+      expect(tomorrow.coverage, 0);
+      expect(tomorrow.isUsable, isFalse);
+    });
+  });
 }

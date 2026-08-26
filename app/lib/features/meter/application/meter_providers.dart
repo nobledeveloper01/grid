@@ -4,6 +4,7 @@ import '../../../core/config/providers.dart';
 import '../../../domain/entities/meter.dart';
 import '../../../domain/entities/reading.dart';
 import '../../../domain/entities/supply_event.dart';
+import '../../../domain/services/band_adherence_engine.dart';
 import '../../../domain/services/compliance_engine.dart';
 import '../../../domain/services/forecast_engine.dart';
 import '../../../domain/value_objects/units.dart';
@@ -159,4 +160,62 @@ final weekSupplyProvider =
         now: now,
       )
       .days;
+});
+
+/// What the band shortfall is worth, in naira. Feature F4.
+///
+/// Returns null only when there is nothing to evaluate at all — no meter, no
+/// band, no rate. A partly-observed month returns [AdherenceUnknown], which
+/// is a result the UI is required to render rather than a gap it may skip.
+final bandAdherenceProvider =
+    Provider.family<BandAdherence?, String>((ref, meterId) {
+  final meter = ref
+      .watch(metersProvider)
+      .value
+      ?.where((m) => m.id == meterId)
+      .firstOrNull;
+  final band = meter?.tariffBand;
+  if (meter == null || band == null) return null;
+
+  final billedRate = ref.watch(effectiveRateProvider(meterId));
+  if (billedRate == null) return null;
+
+  final events = ref.watch(supplyEventsProvider(meterId)).value;
+  final readings = ref.watch(readingsProvider(meterId)).value;
+  final purchases = ref.watch(purchasesProvider(meterId)).value;
+  if (events == null || readings == null || purchases == null) return null;
+
+  final table = ref.watch(tariffTableProvider).value;
+  final now = ref.watch(clockProvider)();
+  const windowDays = 30;
+  final windowStart = now.subtract(const Duration(days: windowDays));
+
+  final summary = ref.watch(complianceEngineProvider).summarise(
+        events: events,
+        windowStart: windowStart,
+        windowEnd: now,
+        now: now,
+      );
+
+  // Energy over the same window the hours were measured over — `totalIn`,
+  // not `total`. A valuation that multiplies one period's rate difference by
+  // the whole history's energy is a number nobody can defend, and it is not
+  // obviously wrong on screen: it just reads as a bigger claim.
+  final series = ref.watch(consumptionEngineProvider).series(
+        meter: meter,
+        readings: readings,
+        purchases: purchases,
+        windowStart: windowStart,
+        windowEnd: now,
+      );
+
+  return ref.watch(bandAdherenceEngineProvider).evaluate(
+        billedBand: band,
+        summary: summary,
+        energy: series.totalIn(windowStart, now),
+        energyIsAllocated: series.isInterpolatedIn(windowStart, now),
+        billedRate: billedRate,
+        rateForBand: (b) => table?.rateFor(meter.disco, b),
+        windowDays: windowDays,
+      );
 });

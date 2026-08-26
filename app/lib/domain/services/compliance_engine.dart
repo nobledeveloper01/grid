@@ -8,25 +8,46 @@ class DailySupply {
     required this.availableMinutes,
     required this.unavailableMinutes,
     required this.unknownMinutes,
+    this.observableMinutes = fullDay,
   });
+
+  static const int fullDay = 24 * 60;
 
   final DateTime date;
   final int availableMinutes;
   final int unavailableMinutes;
   final int unknownMinutes;
 
+  /// How much of this day *could* have been observed. A full day for every
+  /// day but the current one, which is only as long as the clock has run.
+  ///
+  /// Without this, today is scored against 24 hours it has not had yet: a
+  /// perfectly observed morning reports 12% coverage at 03:00, drags the
+  /// window average down, and can push an otherwise sound case below the
+  /// coverage floor that decides whether it may be stated at all.
+  final int observableMinutes;
+
   int get knownMinutes => availableMinutes + unavailableMinutes;
 
   double get hours => availableMinutes / 60.0;
 
-  /// Proportion of the day we actually have data for, 0–1.
-  double get coverage => knownMinutes / (24 * 60);
+  /// Proportion of the observable day we actually have data for, 0–1.
+  double get coverage =>
+      observableMinutes <= 0 ? 0 : knownMinutes / observableMinutes;
+
+  /// True for a day still in progress.
+  bool get isPartialDay => observableMinutes < fullDay;
 
   /// Days below this coverage are excluded from compliance scoring and from
   /// dispute packs. A day we barely observed cannot support a claim.
   static const double minimumCoverage = 0.60;
 
-  bool get isUsable => coverage >= minimumCoverage;
+  /// Usable as one day of supply hours in an average.
+  ///
+  /// A day in progress is never usable, however well observed: eight hours
+  /// of power by lunchtime is not an eight-hour day, and averaging it in as
+  /// one would understate every figure the product reports.
+  bool get isUsable => !isPartialDay && coverage >= minimumCoverage;
 }
 
 class SupplySummary {
@@ -125,15 +146,23 @@ class ComplianceEngine {
         }
       }
 
+      // How much of this day the clock has actually reached.
+      final observable = now.isAfter(dayEnd)
+          ? DailySupply.fullDay
+          : now.isBefore(dayStart)
+              ? 0
+              : now.difference(dayStart).inMinutes;
+
       // Anything not covered by an event is unknown. We do not guess.
       final accounted = available + unavailable;
-      final unknown = (24 * 60) - accounted;
+      final unknown = observable - accounted;
 
       days.add(DailySupply(
         date: dayStart,
         availableMinutes: available,
         unavailableMinutes: unavailable,
         unknownMinutes: unknown < 0 ? 0 : unknown,
+        observableMinutes: observable,
       ));
 
       cursor = dayEnd;
@@ -143,9 +172,11 @@ class ComplianceEngine {
     final average = usable.isEmpty
         ? 0.0
         : usable.fold<double>(0, (a, d) => a + d.hours) / usable.length;
-    final coverage = days.isEmpty
-        ? 0.0
-        : days.fold<double>(0, (a, d) => a + d.coverage) / days.length;
+    // Weighted by observable minutes rather than by day, so a window ending
+    // at 03:00 is not judged as though its last day were a full one.
+    final observable = days.fold<int>(0, (a, d) => a + d.observableMinutes);
+    final known = days.fold<int>(0, (a, d) => a + d.knownMinutes);
+    final coverage = observable == 0 ? 0.0 : known / observable;
 
     return SupplySummary(
       days: days,

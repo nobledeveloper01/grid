@@ -8,6 +8,7 @@ import '../../data/local/database.dart';
 import '../../data/local/hlc.dart';
 import '../../data/repositories/drift_repositories.dart';
 import '../../domain/repositories/repositories.dart';
+import '../../domain/services/band_adherence_engine.dart';
 import '../../domain/services/compliance_engine.dart';
 import '../../domain/services/consumption_engine.dart';
 import '../../domain/services/forecast_engine.dart';
@@ -125,6 +126,9 @@ final validationEngineProvider =
 
 final complianceEngineProvider =
     Provider<ComplianceEngine>((ref) => const ComplianceEngine());
+
+final bandAdherenceEngineProvider =
+    Provider<BandAdherenceEngine>((ref) => const BandAdherenceEngine());
 
 final loadModelEngineProvider =
     Provider<LoadModelEngine>((ref) => const LoadModelEngine());

@@ -63,6 +63,34 @@ class ConsumptionSeries {
 
   bool get hasData => intervals.isNotEmpty;
 
+  /// Energy consumed strictly between [from] and [to].
+  ///
+  /// [total] is the whole series, which is not the same thing — and reaching
+  /// for it when a window was meant is a mistake that produces a figure three
+  /// times too large without anything looking wrong. That happened once: a
+  /// band-shortfall valuation multiplied a 30-day rate difference by ninety
+  /// days of energy, and the resulting naira figure was confidently absurd.
+  ///
+  /// Sums the daily allocation, which is already apportioned by overlap, so
+  /// an interval straddling the window boundary contributes only its share.
+  /// The trade is that days derived by interpolation are included: a window
+  /// narrower than the reading cadence is partly modelled, and a caller that
+  /// makes a claim on this figure should say so.
+  Kwh totalIn(DateTime from, DateTime to) {
+    var sum = Kwh.zero;
+    for (final d in daily) {
+      if (d.date.isBefore(from)) continue;
+      if (!d.date.isBefore(to)) continue;
+      sum += d.consumed;
+    }
+    return sum;
+  }
+
+  /// Whether any day inside the window came from interpolation rather than
+  /// from a reading interval that lands on it.
+  bool isInterpolatedIn(DateTime from, DateTime to) => daily.any((d) =>
+      !d.date.isBefore(from) && d.date.isBefore(to) && d.isInterpolated);
+
   /// Mean daily consumption over the covered period.
   ///
   /// Divides by the days actually spanned by the intervals, not by the

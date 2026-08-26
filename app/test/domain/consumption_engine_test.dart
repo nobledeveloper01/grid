@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grid/domain/entities/reading.dart';
 import 'package:grid/domain/services/consumption_engine.dart';
 import 'package:grid/domain/value_objects/enums.dart';
 import 'package:grid/domain/value_objects/units.dart';
@@ -6,6 +7,7 @@ import 'package:grid/domain/value_objects/units.dart';
 import '_fixtures.dart';
 
 void main() {
+  _windowedTotals();
   const engine = ConsumptionEngine();
 
   group('insufficient data', () {
@@ -213,6 +215,69 @@ void main() {
         days: 7,
       );
       expect(mean!, closeTo(20, 0.1));
+    });
+  });
+}
+
+void _windowedTotals() {
+  group('totalIn', () {
+    const engine = ConsumptionEngine();
+
+    // Ten readings, four days apart, at a flat 10 kWh a day.
+    ConsumptionSeries flatSeries() {
+      final readings = <Reading>[];
+      var register = 1000.0;
+      for (var i = 0; i < 10; i++) {
+        readings.add(reading(
+          id: 'r$i',
+          value: register,
+          at: now.subtract(Duration(days: 36 - i * 4)),
+        ));
+        register += 40;
+      }
+      return engine.series(meter: meter(), readings: readings);
+    }
+
+    test('windows the total instead of returning the whole series', () {
+      final s = flatSeries();
+      final all = s.total.value;
+      final tenDays = s.totalIn(now.subtract(const Duration(days: 10)), now);
+
+      expect(all, closeTo(360, 0.5), reason: '36 days at 10 kWh a day');
+      expect(tenDays, isNot(closeTo(all, 1)));
+      expect(tenDays.value, closeTo(100, 12),
+          reason: 'ten days at roughly 10 kWh a day');
+    });
+
+    test('a window covering everything matches the series total', () {
+      final s = flatSeries();
+      final wide = s.totalIn(
+        now.subtract(const Duration(days: 400)),
+        now.add(const Duration(days: 1)),
+      );
+      expect(wide.milli, s.total.milli);
+    });
+
+    test('a window before any data is zero, not the whole total', () {
+      final s = flatSeries();
+      final before = s.totalIn(
+        now.subtract(const Duration(days: 400)),
+        now.subtract(const Duration(days: 200)),
+      );
+      expect(before, Kwh.zero);
+    });
+
+    test('reports whether the window leans on interpolation', () {
+      final s = flatSeries();
+      // Readings are four days apart, so any single day between two of them
+      // is allocated rather than measured.
+      expect(
+        s.isInterpolatedIn(
+          now.subtract(const Duration(days: 3)),
+          now.subtract(const Duration(days: 2)),
+        ),
+        isTrue,
+      );
     });
   });
 }

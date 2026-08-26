@@ -60,34 +60,52 @@ class GridScaffold extends StatelessWidget {
                 child: _StepIndicator(step: step!, total: totalSteps!),
               ),
             Expanded(
-              child: padded
-                  ? Padding(
-                      padding: EdgeInsets.symmetric(horizontal: horizontal),
-                      child: body,
-                    )
-                  : body,
+              // The wash sits *inside* the scrolling area, at its bottom
+              // edge. It used to be painted on the bottom bar, which is laid
+              // out below the body rather than over it — so it faded nothing
+              // and content still clipped hard, mid-row, at the boundary.
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: padded
+                        ? Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: horizontal),
+                            child: body,
+                          )
+                        : body,
+                  ),
+                  if (bottom != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 32,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                context.colors.surface.withValues(alpha: 0),
+                                context.colors.surface,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
       ),
       bottomNavigationBar: bottom == null
           ? null
-          : Container(
-              // A soft wash under the bottom bar, so content scrolling past it
-              // fades rather than being cut mid-word — a clipped line reads as
-              // broken, a faded one reads as "there is more".
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    context.colors.surface.withValues(alpha: 0),
-                    context.colors.surface,
-                    context.colors.surface,
-                  ],
-                  stops: const [0, 0.35, 1],
-                ),
-              ),
+          : ColoredBox(
+              color: context.colors.surface,
               child: SafeArea(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
