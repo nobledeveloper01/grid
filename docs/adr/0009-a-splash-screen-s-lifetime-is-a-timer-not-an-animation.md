@@ -6,8 +6,10 @@
 ## Context
 
 Grid opens on a branded splash: the mark on the hero gradient, a warm bloom, the wordmark,
-and a tagline. It runs 1.2 seconds and the app initialises behind it, so it costs nothing
-against the 2-second cold-start budget.
+and a tagline. It runs 2.2 seconds — raised from 1.2 s, which was over before it read as
+anything — and the app initialises *behind* it, so what it spends is time-to-first-tap
+rather than load time. The cold-start budget is unaffected: the first real screen is already
+built when the splash lifts.
 
 The obvious implementation drives everything from one `AnimationController`:
 
@@ -39,15 +41,15 @@ A fresh iOS simulator has it on, which is how this was caught at all.
 ```dart
 _exit ??= Timer(
   MediaQuery.disableAnimationsOf(context)
-      ? SplashScreen.reducedTotal   // 600ms
-      : SplashScreen.total,         // 1200ms
+      ? SplashScreen.reducedTotal   // 1400ms
+      : SplashScreen.total,         // 2200ms
   widget.onFinished,
 );
 ```
 
 The controller still runs and still drives the mark, the bloom and the wordmark. It no
 longer decides when the splash ends. Under reduce-motion the composition is rendered at its
-final state and held for 600 ms — shorter, because there is nothing to watch, but not zero.
+final state and held for 1400 ms — shorter, because there is nothing to watch, but not zero.
 
 The timer is created in `didChangeDependencies`, not `initState`, because
 `MediaQuery.disableAnimationsOf` needs an inherited widget; `??=` keeps it to one timer

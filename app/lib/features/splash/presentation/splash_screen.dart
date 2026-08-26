@@ -23,13 +23,18 @@ class SplashScreen extends StatefulWidget {
   final VoidCallback onFinished;
 
   /// The full sequence, mark through wordmark to exit.
-  static const Duration total = Duration(milliseconds: 1200);
+  ///
+  /// 2.2 s is longer than a splash strictly needs, and that is a deliberate
+  /// call: at 1.2 s the sequence was over before it read as anything. The app
+  /// initialises *behind* this rather than after it, so what this spends is
+  /// time-to-first-tap, not load time.
+  static const Duration total = Duration(milliseconds: 2200);
 
   /// How long to hold when the platform has animations switched off.
   ///
   /// Shorter, because there is nothing to watch — but not zero. Someone who
   /// turns off animations still gets to see what they opened.
-  static const Duration reducedTotal = Duration(milliseconds: 600);
+  static const Duration reducedTotal = Duration(milliseconds: 1400);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -46,27 +51,27 @@ class _SplashScreenState extends State<SplashScreen>
   // simply appearing.
   late final Animation<double> _markScale = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.0, 0.42, curve: Curves.easeOutBack),
+    curve: const Interval(0.0, 0.30, curve: Curves.easeOutBack),
   );
   late final Animation<double> _markFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.0, 0.30, curve: Curves.easeOut),
+    curve: const Interval(0.0, 0.20, curve: Curves.easeOut),
   );
 
   // The glow follows it out, so the mark reads as lit rather than drawn.
   late final Animation<double> _glow = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.12, 0.62, curve: Curves.easeOutCubic),
+    curve: const Interval(0.08, 0.50, curve: Curves.easeOutCubic),
   );
 
   // Then the name, rising slightly.
   late final Animation<double> _wordFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.34, 0.66, curve: Curves.easeOut),
+    curve: const Interval(0.24, 0.48, curve: Curves.easeOut),
   );
   late final Animation<double> _lineFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.48, 0.80, curve: Curves.easeOut),
+    curve: const Interval(0.36, 0.60, curve: Curves.easeOut),
   );
 
   Timer? _exit;

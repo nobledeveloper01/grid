@@ -72,6 +72,7 @@ dev_dependencies:
   drift_dev: ^2.34.5
   freezed: ^4.0.0
   json_serializable: ^6.14.1
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -128,3 +129,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# The app icon is generated from the brand mark by tool/generate_icon.py, so
+# the thing on the home screen is the same object as the splash mark and the
+# payoff screen mark. Regenerate with:
+#   python3 tool/generate_icon.py && dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/icon.png"
+  ios: true
+  remove_alpha_ios: true
+  android: true
+  adaptive_icon_background: "assets/icon/icon_background.png"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
