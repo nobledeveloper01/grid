@@ -34,6 +34,8 @@ class _DiscoScreenState extends ConsumerState<DiscoScreen> {
         .toList();
 
     return GridScaffold(
+      step: 2,
+      totalSteps: 3,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

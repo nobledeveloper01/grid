@@ -35,6 +35,8 @@ class _TariffBandScreenState extends ConsumerState<TariffBandScreen> {
     final estimated = table?.estimateBand(_estimatedHours);
 
     return GridScaffold(
+      step: 3,
+      totalSteps: 3,
       body: ListView(
         children: [
           const SizedBox(height: Space.xl),

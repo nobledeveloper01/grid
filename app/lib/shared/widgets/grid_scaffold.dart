@@ -14,6 +14,8 @@ class GridScaffold extends StatelessWidget {
     this.bottom,
     this.showBack = true,
     this.padded = true,
+    this.step,
+    this.totalSteps,
   });
 
   final Widget body;
@@ -22,6 +24,12 @@ class GridScaffold extends StatelessWidget {
   final Widget? bottom;
   final bool showBack;
   final bool padded;
+
+  /// 1-based position in a multi-step flow. A flow with more than one step
+  /// should say how many are left; guessing is a small anxiety the user does
+  /// not need while being asked about their meter.
+  final int? step;
+  final int? totalSteps;
 
   @override
   Widget build(BuildContext context) {
@@ -39,26 +47,95 @@ class GridScaffold extends StatelessWidget {
             ),
       body: SafeArea(
         top: title == null,
-        child: padded
-            ? Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontal),
-                child: body,
-              )
-            : body,
+        child: Column(
+          children: [
+            if (step != null && totalSteps != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontal,
+                  Space.lg,
+                  horizontal,
+                  0,
+                ),
+                child: _StepIndicator(step: step!, total: totalSteps!),
+              ),
+            Expanded(
+              child: padded
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: horizontal),
+                      child: body,
+                    )
+                  : body,
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: bottom == null
           ? null
-          : SafeArea(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontal,
-                  Space.sm,
-                  horizontal,
-                  Space.lg,
+          : Container(
+              // A soft wash under the bottom bar, so content scrolling past it
+              // fades rather than being cut mid-word — a clipped line reads as
+              // broken, a faded one reads as "there is more".
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    context.colors.surface.withValues(alpha: 0),
+                    context.colors.surface,
+                    context.colors.surface,
+                  ],
+                  stops: const [0, 0.35, 1],
                 ),
-                child: bottom,
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontal,
+                    Space.lg,
+                    horizontal,
+                    Space.lg,
+                  ),
+                  child: bottom,
+                ),
               ),
             ),
+    );
+  }
+}
+
+/// Progress through a multi-step flow. Segments rather than dots, so the
+/// proportion completed is readable at a glance and not just countable.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.step, required this.total});
+
+  final int step;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Semantics(
+      label: 'Step $step of $total',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            for (var i = 1; i <= total; i++) ...[
+              Expanded(
+                child: AnimatedContainer(
+                  duration: Motion.page,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: i <= step ? c.brand : c.track,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              if (i != total) const SizedBox(width: Space.xs),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

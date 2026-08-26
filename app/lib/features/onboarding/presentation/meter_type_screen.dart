@@ -32,6 +32,8 @@ class MeterTypeScreen extends ConsumerWidget {
 
     return GridScaffold(
       showBack: false,
+      step: 1,
+      totalSteps: 3,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

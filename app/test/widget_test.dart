@@ -189,7 +189,7 @@ void main() {
         ),
       );
       // Colour must never be the sole carrier of meaning.
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
     });
 
     testWidgets('exposes selection state to screen readers', (tester) async {
@@ -203,7 +203,7 @@ void main() {
         find.bySemanticsLabel('Prepaid'),
         findsAtLeastNWidgets(1),
       );
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
       handle.dispose();
     });
 
