@@ -14,9 +14,11 @@ class GridApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: GridTheme.light(),
       darkTheme: GridTheme.dark(),
-      // Dark is the system default at night by preference, which is when
-      // people read meters.
-      themeMode: ThemeMode.system,
+      // Dark by default, not by system preference. This app is opened at a
+      // meter, outdoors, at night more often than not — and the amber on a
+      // warm black is the version of Grid that actually looks like the thing
+      // it is about. Light remains fully authored for daytime use.
+      themeMode: ThemeMode.dark,
       routerConfig: ref.watch(routerProvider),
     );
   }
