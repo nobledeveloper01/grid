@@ -194,14 +194,28 @@ The first phase that needs a server, and only because a second person must read 
 first person wrote.
 
 **Deliverables**
-- Auth, delta sync, statement sharing, push
-- Property and unit model, batch reading, allocation engine, tenant statements
+- A Go server in [`server/`](../server/), statically linked, no dependencies beyond the
+  standard library ✅
+- Statement issue, list and revoke; expiring, revocable capability links ✅
+- The tenant page: server-rendered, no account, no app, no JavaScript ✅
+- The allocation engine, mirrored from Dart and pinned to shared fixtures ✅
+- Auth: landlord API keys ✅ — accounts, sessions and roles are not built
+- Delta sync of facts from the phone — not built
+- Landlord console screens in the app — not built; statements are issued over the API today
 
 **Exit gate**
 - The allocation sum invariant holds under property-based testing: allocations always sum
-  to the bill total, exactly, to the naira
-- A 40-unit batch reading completes fully offline
-- A tenant opens a statement without installing the app
+  to the bill total, exactly, to the naira ✅ — 2,000 randomised trials in Go, 300 in Dart,
+  and both implementations pinned to the same fixtures
+- A 40-unit batch reading completes fully offline — **open**, batch reading is not built
+- A tenant opens a statement without installing the app ✅ — asserted by
+  `TestTenantOpensWithoutAnAccount`
+
+**Partly green.** The half that decides whether the product is credible to a *second* person
+is done: a tenant can open a statement with nothing but a link, and the split they are shown
+was recomputed by the server rather than taken on trust from the landlord's phone. The half
+that makes a landlord's life easier — batch reading, console screens, sync — is not. The
+gate is not marked complete on the strength of the first half.
 
 ---
 
@@ -218,7 +232,7 @@ first person wrote.
 
 ---
 
-## Phase 8 — Household economics
+## Phase 8 — Household economics ✅
 
 The grid is not the whole bill. This phase makes Grid answer the question households actually
 argue about — grid, generator or solar — using that household's own measured data rather than
@@ -226,10 +240,10 @@ a vendor's assumption.
 
 **Deliverables**
 - **F9** Fuel purchases and generator run-log, with a naira-per-kWh for generated power set
-  beside the grid rate
+  beside the grid rate ✅
 - **F10** Solar and battery sizing derived from measured consumption and the *longest*
-  measured outage, with payback computed against logged generator spend
-- **F12** Appliance coach: ranked attribution in naira, with a what-if on run-time
+  measured outage, with payback computed against logged generator spend ✅
+- **F12** Appliance coach: ranked attribution in naira, with a what-if on run-time ✅
 
 **Exit gate**
 - Every figure derived from the load model renders in the `estimate` treatment — dashed,
@@ -244,11 +258,11 @@ a vendor's assumption.
 ## Phase 9 — Many meters, many people
 
 **Deliverables**
-- **F6** Meter as a selectable entity, with a combined spend view across meters
-- **F11** Compound split: an explicit, versioned split rule and a shareable per-occupant
-  receipt carrying the meter photograph, the period, the rule and the share
+- **F6** Meter as a selectable entity, with a combined spend view across meters — not built
+- **F11** Compound split: an explicit split rule and a shareable per-occupant receipt
+  carrying the period, the rule and the share ✅
 - **F13** Encrypted backup and restore to any platform file destination, with a versioned
-  archive format
+  archive format — not built
 
 **Exit gate**
 - The allocation sum invariant holds under property-based testing — shares always sum to the
