@@ -18,6 +18,7 @@ import '../../meter/application/meter_providers.dart';
 import '../../supply/application/supply_inference_controller.dart';
 import '../../../shared/charts/trend_chart.dart';
 import '../../budget/presentation/budget_card.dart';
+import '../../meter/presentation/meter_switcher.dart';
 import '../../dispute/application/dispute_providers.dart';
 import '../../insights/application/insights_providers.dart';
 import '../../reminders/application/reminder_providers.dart';
@@ -487,12 +488,19 @@ class _Greeting extends ConsumerWidget {
                 // meter name and the DisCo chip overflowed the header by
                 // 190 logical pixels — a hard layout error, not a cosmetic
                 // one. The chip now drops to its own line instead.
-                Wrap(
+                // Tappable: with one meter this is a label, and with several
+                // it is the only way to move between them.
+                InkWell(
+                  onTap: () => showMeterSwitcher(context),
+                  borderRadius: Radii.smAll,
+                  child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: Space.sm,
                   runSpacing: Space.xs,
                   children: [
                     Text(meterLabel, style: t.headline),
+                    Icon(Icons.unfold_more_rounded,
+                        size: 18, color: c.textTertiary),
                     if (meter != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -512,6 +520,7 @@ class _Greeting extends ConsumerWidget {
                         ),
                       ),
                   ],
+                ),
                 ),
               ],
             ),

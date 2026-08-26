@@ -15,6 +15,7 @@ import '../../features/reading/presentation/manual_entry_screen.dart';
 import '../../features/reading/presentation/reading_history_screen.dart';
 import '../../features/reading/presentation/purchase_entry_screen.dart';
 import '../../features/appliances/presentation/appliance_screen.dart';
+import '../../features/backup/presentation/backup_screen.dart';
 import '../../features/dispute/presentation/cases_screen.dart';
 import '../../features/economics/presentation/economics_screen.dart';
 import '../../features/split/presentation/links_screen.dart';
@@ -42,6 +43,7 @@ abstract final class Routes {
   static const insights = '/insights';
   static const appliances = '/appliances';
   static const settings = '/settings';
+  static const backup = '/settings/backup';
   static const economics = '/economics';
   static const split = '/split';
   static const splitLinks = '/split/links';
@@ -164,6 +166,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settings,
         builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'backup',
+            builder: (context, state) => const BackupScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.dispute,

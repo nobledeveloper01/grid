@@ -202,6 +202,10 @@ class SettingsScreen extends ConsumerWidget {
                 label: 'Cases',
                 onTap: () => context.push(Routes.cases),
               ),
+              _LinkRow(
+                label: 'Backup',
+                onTap: () => context.push(Routes.backup),
+              ),
             ],
           ),
 
