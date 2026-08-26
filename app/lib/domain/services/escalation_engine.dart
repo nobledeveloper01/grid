@@ -25,7 +25,9 @@ enum EscalationStep {
 
   /// The DisCo's own complaints unit above the local office.
   discoComplaints(
-    "The DisCo's complaints unit",
+    // Reads as a label and mid-sentence: "…before the DisCo complaints unit
+    // opens". "The DisCo's complaints unit" did not.
+    'DisCo complaints unit',
     'If the business unit has not resolved it, the complaint goes above the '
         'local office. Send the same pack, plus the acknowledgement, plus a '
         'line saying how long it has been.',

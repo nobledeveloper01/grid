@@ -12,6 +12,7 @@ import '../../../domain/services/dispute_pack_engine.dart';
 import '../../../domain/services/escalation_engine.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
+import '../../../shared/widgets/text_prompt_sheet.dart';
 import '../../meter/application/meter_providers.dart';
 import '../application/dispute_providers.dart';
 
@@ -192,7 +193,7 @@ class _CaseCard extends ConsumerWidget {
                 if (state.canEscalate)
                   FilledButton.tonal(
                     onPressed: () => controller.escalate(record),
-                    child: Text('Take it to ${record.step.next!.label}'),
+                    child: Text('Take it to the ${record.step.next!.label}'),
                   ),
                 if (record.packPath != null)
                   OutlinedButton(
@@ -231,54 +232,15 @@ class _CaseCard extends ConsumerWidget {
     WidgetRef ref,
     DisputeCase record,
   ) async {
-    final controller = TextEditingController();
-    final reference = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.colors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radii.lg),
-      ),
-      builder: (sheet) => Padding(
-        padding: EdgeInsets.only(
-          left: Space.xl,
-          right: Space.xl,
-          top: Space.xl,
-          bottom: MediaQuery.viewInsetsOf(sheet).bottom + Space.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Did they give you a reference?',
-                style: sheet.type.headline),
-            const SizedBox(height: Space.sm),
-            Text(
-              'A complaint number, a receipt, the name of whoever took it — '
-              'anything with a date on it. Without one, the next step starts '
-              'the clock again from nothing.',
-              style: sheet.type.caption
-                  .copyWith(color: sheet.colors.textTertiary),
-            ),
-            const SizedBox(height: Space.lg),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(hintText: 'Optional'),
-            ),
-            const SizedBox(height: Space.lg),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(sheet).pop(controller.text),
-                child: const Text('Start the clock'),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final reference = await promptForText(
+      context,
+      title: 'Did they give you a reference?',
+      description: 'A complaint number, a receipt, the name of whoever took '
+          'it — anything with a date on it. Without one, the next step '
+          'starts the clock again from nothing.',
+      hintText: 'Optional',
+      confirmLabel: 'Start the clock',
     );
-    controller.dispose();
     if (reference == null) return;
     await ref.read(caseControllerProvider.notifier).markSubmitted(
           record,
@@ -316,7 +278,7 @@ class _Timing extends StatelessWidget {
 
     if (state.canEscalate) {
       return Text(
-        '$elapsed days with no resolution. You can take this to '
+        '$elapsed days with no resolution. You can take this to the '
         '${state.step.next!.label} now.',
         style: t.bodyStrong.copyWith(color: c.warning),
       );
@@ -327,7 +289,7 @@ class _Timing extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Day $elapsed of $wait. $remaining to go before '
+          'Day $elapsed of $wait. $remaining to go before the '
           '${state.step.next!.label} opens.',
           style: t.body.copyWith(color: c.textSecondary),
         ),

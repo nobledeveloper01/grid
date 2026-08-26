@@ -82,9 +82,21 @@ New entry: `make journal T="what this session was about"`.
   printed the sign at the end of one line and the amount at the start of the next. U+202F
   kerns identically and does not break.
 
+- **Driving the app found what the tests could not.** Two of the day's worst defects surfaced
+  only from actually using it: the accessibility overflow, which is a stated definition-of-done
+  item that had never been checked, and a crash on recording a case reference. The crash came
+  from the most ordinary code in the whole session — create a `TextEditingController`, await a
+  bottom sheet, dispose it — and the assertion it throws mentions neither text fields nor
+  controllers. Both were found by opening the app and pressing things, which no amount of unit
+  testing was going to substitute for.
+- **The onboarding button did not do what it said.** "Log my first reading" went to the home
+  screen. It had been that way since phase 1, through a design review and a QA pass, because
+  the screen it lands on looks fine. The failure is only visible if you read the button and
+  then watch what happens.
+
 ### Where we stopped
 
-- 265 tests, 98% coverage on the domain engines, all gates green.
+- 268 tests, 98% coverage on the domain engines, all gates green.
 - Phase 3's exit gate is met with its scope stated (ADR-0010). Phase 2's accuracy gate is
   still carried against physical hardware. Phase 5's regulatory verification is open and
   gates release.

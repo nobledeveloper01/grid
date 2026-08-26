@@ -11,6 +11,7 @@ import '../../../domain/value_objects/enums.dart';
 import '../../../domain/value_objects/units.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
+import '../../../shared/widgets/text_prompt_sheet.dart';
 import '../../meter/application/meter_providers.dart';
 import '../../reminders/application/reminder_providers.dart';
 
@@ -392,49 +393,13 @@ class _TextRow extends StatelessWidget {
   }
 
   Future<void> _edit(BuildContext context) async {
-    final controller = TextEditingController(text: value ?? '');
-    final result = await showModalBottomSheet<String?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.colors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radii.lg),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          left: Space.xl,
-          right: Space.xl,
-          top: Space.xl,
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + Space.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: sheetContext.type.headline),
-            const SizedBox(height: Space.lg),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: keyboard,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(hintText: hint),
-              onSubmitted: (v) => Navigator.of(sheetContext).pop(v),
-            ),
-            const SizedBox(height: Space.lg),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () =>
-                    Navigator.of(sheetContext).pop(controller.text),
-                child: const Text('Save'),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final result = await promptForText(
+      context,
+      title: label,
+      initialValue: value,
+      hintText: hint,
+      keyboardType: keyboard,
     );
-    controller.dispose();
     if (result != null) onSaved(result.trim().isEmpty ? null : result.trim());
   }
 }
