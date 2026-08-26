@@ -69,7 +69,19 @@ class InfoNote extends StatelessWidget {
           ),
           if (actions != null && actions!.isNotEmpty) ...[
             const SizedBox(height: Space.md),
-            Wrap(spacing: Space.sm, runSpacing: Space.sm, children: actions!),
+            // Buttons in this app are sized to fill their parent, so a Wrap
+            // gave every action its own full-width row and turned a note
+            // into a stack of banners. Sharing one row keeps the note a
+            // note; a single action still spans it, which is correct.
+            Row(
+              children: [
+                for (final (i, action) in actions!.indexed) ...[
+                  Expanded(child: action),
+                  if (i != actions!.length - 1)
+                    const SizedBox(width: Space.sm),
+                ],
+              ],
+            ),
           ],
         ],
       ),

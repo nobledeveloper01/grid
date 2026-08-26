@@ -278,14 +278,21 @@ class _PostpaidHero extends ConsumerWidget {
     }
 
     final p = projection as CostProjected;
+    // The headline is the *whole cycle*, and the label says so. It read
+    // "Bill so far this month" over a figure that covered only the days
+    // still to come — neither what had been spent nor what the bill would
+    // be. What has actually been spent is now stated underneath, where it
+    // can be checked against the meter.
     return _LitHero(
-      label: 'Bill so far this month',
+      label: 'Bill this month',
       icon: Icons.receipt_long_rounded,
       headline: p.projectedCost.format(),
       detail: p.isRough
-          ? 'Somewhere between ${p.lowCost.format()} and ${p.highCost.format()} — '
-              'only ${p.daysOfData} days of readings so far.'
-          : '${p.projectedKwh.format()} at ${p.rate.format()}.',
+          ? 'Somewhere between ${p.lowCost.format()} and '
+              '${p.highCost.format()} — only ${p.daysOfData} days of '
+              'readings so far.'
+          : '${p.costSoFar.format()} so far, from '
+              '${p.consumedSoFar.format()} at ${p.rate.format()}.',
       footer: Row(
         children: [
           _HeroChip(

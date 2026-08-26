@@ -112,6 +112,7 @@ final costProjectionProvider =
   if (readings == null || purchases == null || rate == null) return null;
 
   final now = ref.watch(clockProvider)();
+  final cycleStart = DateTime(now.year, now.month);
   final cycleEnd = DateTime(now.year, now.month + 1, 1);
 
   return ref.watch(forecastEngineProvider).cost(
@@ -120,6 +121,7 @@ final costProjectionProvider =
         purchases: purchases,
         rate: rate,
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: cycleEnd,
       );
 });

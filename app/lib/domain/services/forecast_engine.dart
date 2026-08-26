@@ -69,6 +69,7 @@ sealed class CostProjection {
 
 final class CostProjected extends CostProjection {
   const CostProjected({
+    required this.consumedSoFar,
     required this.projectedKwh,
     required this.projectedCost,
     required this.lowCost,
@@ -79,8 +80,25 @@ final class CostProjected extends CostProjection {
     required this.cycleEnd,
   });
 
+  /// Energy already used this cycle. Measured, not projected.
+  final Kwh consumedSoFar;
+
+  /// The **whole cycle**: what has been used plus what the rest of it is
+  /// expected to add.
+  ///
+  /// This used to be the remainder alone, and the home screen labelled it
+  /// "bill so far this month" — so the one number on the screen was neither
+  /// what had been spent nor what the bill would be. A projection that does
+  /// not say which of the two it is has no defensible reading.
   final Kwh projectedKwh;
+
   final Naira projectedCost;
+
+  /// What has been used so far, priced. Carries no uncertainty band: it
+  /// already happened.
+  Naira get costSoFar => rate.costOf(consumedSoFar);
+
+  Kwh get remainingKwh => projectedKwh - consumedSoFar;
 
   /// The range. Displayed instead of a single figure whenever data is thin —
   /// false precision on a bill projection destroys trust the first time it
@@ -189,6 +207,7 @@ class ForecastEngine {
     required List<Purchase> purchases,
     required Rate rate,
     required DateTime now,
+    required DateTime cycleStart,
     required DateTime cycleEnd,
   }) {
     final clean = readings.where((r) => r.isClean).toList();
@@ -217,19 +236,36 @@ class ForecastEngine {
     final daysOfData =
         sorted.last.readAt.difference(sorted.first.readAt).inDays;
 
+    // What the cycle has already cost, measured from readings rather than
+    // modelled from the mean.
+    final soFar = consumption
+        .series(
+          meter: meter,
+          readings: readings,
+          purchases: purchases,
+          windowStart: cycleStart,
+          windowEnd: now,
+        )
+        .total;
+
     final daysRemaining = cycleEnd.difference(now).inMinutes / (60 * 24);
-    final projectedKwh =
+    final remainder =
         Kwh.fromDouble(mean * (daysRemaining < 0 ? 0 : daysRemaining));
+    final projectedKwh = soFar + remainder;
 
     // The band widens as data thins. With a fortnight of readings it is
     // tight; with four days it is honest about being a guess.
     final spread = daysOfData >= 14 ? 0.10 : (daysOfData >= 7 ? 0.20 : 0.35);
 
+    // The spread applies to the remainder only. What has already been used
+    // is not a guess, and widening the whole figure by 10% would put a band
+    // around a measurement.
     return CostProjected(
+      consumedSoFar: soFar,
       projectedKwh: projectedKwh,
       projectedCost: rate.costOf(projectedKwh),
-      lowCost: rate.costOf(projectedKwh * (1 - spread)),
-      highCost: rate.costOf(projectedKwh * (1 + spread)),
+      lowCost: rate.costOf(soFar + remainder * (1 - spread)),
+      highCost: rate.costOf(soFar + remainder * (1 + spread)),
       rate: rate,
       daysOfData: daysOfData,
       dailyMean: mean,

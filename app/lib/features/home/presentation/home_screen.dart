@@ -17,6 +17,7 @@ import '../../../shared/widgets/supply_strip.dart';
 import '../../meter/application/meter_providers.dart';
 import '../../supply/application/supply_inference_controller.dart';
 import '../../../shared/charts/trend_chart.dart';
+import '../../budget/presentation/budget_card.dart';
 import '../../dispute/application/dispute_providers.dart';
 import '../../insights/application/insights_providers.dart';
 import '../widgets/hero_card.dart';
@@ -64,6 +65,8 @@ class HomeScreen extends ConsumerWidget {
             sliver: SliverList.list(
               children: [
                 const HeroCard(),
+                const SizedBox(height: Space.md),
+                BudgetCard(meterId: meter.id),
                 const SizedBox(height: Space.xl),
 
                 // At-a-glance figures.
@@ -118,7 +121,7 @@ class HomeScreen extends ConsumerWidget {
                         "day. You've been getting "
                         '${formatHours(compliance.summary.rollingAverageHours)}.',
                     actions: [
-                      TextButton(
+                      OutlinedButton(
                         onPressed: () => context.push(Routes.supplyTimeline),
                         child: const Text('See the log'),
                       ),

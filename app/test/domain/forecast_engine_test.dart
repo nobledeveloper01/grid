@@ -158,6 +158,10 @@ void main() {
   });
 
   group('cost projection', () {
+    // A cycle that opened five days ago, so "so far" is a real quantity and
+    // not an edge case.
+    final cycleStart = now.subtract(const Duration(days: 5));
+
     test('refuses without enough readings', () {
       final c = engine.cost(
         meter: meter(),
@@ -165,6 +169,7 @@ void main() {
         purchases: const [],
         rate: Rate.fromNaira(225),
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: now.add(const Duration(days: 20)),
       );
       expect(c, isA<CostUnavailable>());
@@ -177,13 +182,40 @@ void main() {
         purchases: const [],
         rate: Rate.fromNaira(200),
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: now.add(const Duration(days: 10)),
       ) as CostProjected;
 
-      // 10 kWh/day for 10 days at ₦200 = ₦20,000.
-      expect(c.projectedKwh.value, closeTo(100, 2));
-      expect(c.projectedCost.value, closeTo(20000, 400));
+      // The projection covers the whole cycle: 5 days already used plus
+      // 10 still to come, at 10 kWh a day and ₦200 — about ₦30,000.
+      expect(c.consumedSoFar.value, closeTo(50, 2));
+      expect(c.remainingKwh.value, closeTo(100, 2));
+      expect(c.projectedKwh.value, closeTo(150, 4));
+      expect(c.projectedCost.value, closeTo(30000, 800));
       expect(c.isRough, isFalse);
+    });
+
+    test('the uncertainty band brackets the remainder, not what was used',
+        () {
+      // Widening the whole figure would put a range around a measurement.
+      final c = engine.cost(
+        meter: meter(),
+        readings: dailyRun(start: 1000, perDay: 10, days: 15, endingAt: now),
+        purchases: const [],
+        rate: Rate.fromNaira(200),
+        now: now,
+        cycleStart: cycleStart,
+        cycleEnd: now.add(const Duration(days: 10)),
+      ) as CostProjected;
+
+      expect(c.lowCost, greaterThan(c.costSoFar),
+          reason: 'even the low end includes what has already happened');
+      expect(c.lowCost < c.projectedCost, isTrue);
+      expect(c.highCost > c.projectedCost, isTrue);
+
+      // A 10% band on a 100 kWh remainder is ±20 kWh at ₦200 = ±₦4,000.
+      final halfBand = (c.highCost.kobo - c.lowCost.kobo) / 2;
+      expect(halfBand / 100, closeTo(2000, 250));
     });
 
     test('returns a wider range when data is thin', () {
@@ -193,6 +225,7 @@ void main() {
         purchases: const [],
         rate: Rate.fromNaira(200),
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: now.add(const Duration(days: 10)),
       ) as CostProjected;
 
@@ -202,6 +235,7 @@ void main() {
         purchases: const [],
         rate: Rate.fromNaira(200),
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: now.add(const Duration(days: 10)),
       ) as CostProjected;
 
@@ -218,9 +252,12 @@ void main() {
         purchases: const [],
         rate: Rate.fromNaira(200),
         now: now,
+        cycleStart: cycleStart,
         cycleEnd: now.subtract(const Duration(days: 3)),
       ) as CostProjected;
-      expect(c.projectedKwh, Kwh.zero);
+      // The remainder is clamped to nothing; what was already used stands.
+      expect(c.remainingKwh, Kwh.zero);
+      expect(c.projectedKwh, c.consumedSoFar);
     });
   });
 }
