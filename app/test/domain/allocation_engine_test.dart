@@ -88,13 +88,44 @@ void main() {
 
   group('the remainder', () {
     test('goes to whoever was rounded down hardest, and is named', () {
-      final a = split(naira: 100.01, occupants: people(3));
+      // A whole-naira total that will not divide evenly. The sub-naira tail
+      // is a separate case, and has its own test below.
+      final a = split(naira: 10001, occupants: people(3));
       expect(a.remainderGivenTo, isNotNull);
       expect(a.sumsExactly, isTrue);
       // Two get 3,333 kobo and one gets 3,335 — or some such; what matters is
       // that the difference is at most a kobo per person per remainder unit.
       final amounts = a.shares.map((s) => s.amount.kobo).toList()..sort();
-      expect(amounts.last - amounts.first, lessThanOrEqualTo(2));
+      // One settlement unit — a naira — is the most any two may differ by.
+      expect(amounts.last - amounts.first,
+          lessThanOrEqualTo(AllocationEngine.settlementUnit));
+    });
+
+    test('every share is payable in whole naira', () {
+      // Allocating in kobo is arithmetically correct and produces figures
+      // nobody can settle: a ₦65,098 bill split by rooms gave ₦39,058.80,
+      // rendered as ₦39,058, which visibly failed to add up to the total the
+      // receipt claimed it matched.
+      final a = split(
+        rule: SplitRule.byRooms,
+        naira: 65098,
+        occupants: const [
+          Occupant(id: 'a', name: 'Main house', rooms: 3),
+          Occupant(id: 'b', name: 'Boys quarters'),
+          Occupant(id: 'c', name: 'Shop in front'),
+        ],
+      );
+      for (final s in a.shares) {
+        expect(s.amount.kobo % AllocationEngine.settlementUnit, 0,
+            reason: '${s.occupant.name} owes a fraction of a naira');
+      }
+      expect(a.sumsExactly, isTrue);
+    });
+
+    test('a sub-naira tail on the total still balances', () {
+      final a = split(naira: 10000.57, occupants: people(3));
+      expect(a.sumsExactly, isTrue);
+      expect(a.remainderGivenTo, isNotNull);
     });
 
     test('is nobody when the division is clean', () {

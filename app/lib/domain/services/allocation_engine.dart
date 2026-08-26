@@ -104,12 +104,26 @@ class Allocation {
 class AllocationEngine {
   const AllocationEngine();
 
-  /// Splits [total] between [occupants].
+  /// The granularity shares are allocated in: one naira.
   ///
-  /// Largest-remainder: every share is floored, and the kobo left over are
-  /// handed out one at a time to whoever was rounded down hardest. Dividing
-  /// and rounding each share independently is what loses money — three ways
-  /// on ₦10,000 gives ₦3,333.33 each, and three of those is ₦9,999.99.
+  /// Allocating in kobo is arithmetically correct and produces figures nobody
+  /// can settle. A ₦65,098 bill split three ways by rooms gives 3,905,880 /
+  /// 1,301,960 / 1,301,960 kobo — exact to the kobo, and rendered as ₦39,058,
+  /// ₦13,019 and ₦13,019, which visibly add up to ₦65,096. The receipt then
+  /// claims the shares balance while showing three numbers that do not.
+  ///
+  /// Nobody pays eighty kobo. Whole naira makes the figures both settleable
+  /// and visibly correct, and exactness survives because the remainder is
+  /// distributed in the same unit.
+  static const int settlementUnit = 100;
+
+  /// Splits [total] between [occupants], in whole naira.
+  ///
+  /// Largest-remainder: every share is floored to the settlement unit, and
+  /// the units left over are handed out one at a time to whoever was rounded
+  /// down hardest. Dividing and rounding each share independently is what
+  /// loses money — three ways on ₦10,000 gives ₦3,333.33 each, and three of
+  /// those is ₦9,999.99.
   Allocation split({
     required SplitRule rule,
     required Naira total,
@@ -141,11 +155,19 @@ class AllocationEngine {
         : weights;
     final safeSum = sum <= 0 ? occupants.length.toDouble() : sum;
 
+    // Work in settlement units so every share lands on a whole naira. Any
+    // sub-naira tail on the total is carried separately and given to the same
+    // household that takes the first remainder unit — it has to land
+    // somewhere, and splitting it further reintroduces the unsettleable
+    // figures this exists to avoid.
+    final units = total.kobo ~/ settlementUnit;
+    final tail = total.kobo % settlementUnit;
+
     final exact = [
-      for (final w in safe) total.kobo * w / safeSum,
+      for (final w in safe) units * w / safeSum,
     ];
     final floored = [for (final e in exact) e.floor()];
-    var remainder = total.kobo - floored.fold<int>(0, (a, k) => a + k);
+    var remainder = units - floored.fold<int>(0, (a, k) => a + k);
 
     // Hand the remainder to whoever lost the most to flooring, largest first.
     final order = List<int>.generate(occupants.length, (i) => i)
@@ -159,15 +181,22 @@ class AllocationEngine {
         return byFraction != 0 ? byFraction : a.compareTo(b);
       });
 
-    final kobo = [...floored];
+    final allocatedUnits = [...floored];
     String? remainderTo;
     var i = 0;
     while (remainder > 0) {
       final at = order[i % order.length];
-      kobo[at] += 1;
+      allocatedUnits[at] += 1;
       remainderTo ??= occupants[at].name;
       remainder -= 1;
       i++;
+    }
+
+    final kobo = [for (final u in allocatedUnits) u * settlementUnit];
+    if (tail > 0) {
+      final at = order.first;
+      kobo[at] += tail;
+      remainderTo ??= occupants[at].name;
     }
 
     return Allocation(
