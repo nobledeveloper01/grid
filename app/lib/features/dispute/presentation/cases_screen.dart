@@ -128,9 +128,13 @@ class _CaseCard extends ConsumerWidget {
                   style: t.title.copyWith(color: c.textPrimary),
                 ),
               ),
-              Text(
-                _statusLabel(record.status),
-                style: t.caption.copyWith(color: accent),
+              Flexible(
+                child: Text(
+                  _statusLabel(record.status),
+                  maxLines: 2,
+                  textAlign: TextAlign.right,
+                  style: t.caption.copyWith(color: accent),
+                ),
               ),
             ],
           ),

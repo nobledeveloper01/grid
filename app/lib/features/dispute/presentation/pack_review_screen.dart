@@ -352,9 +352,13 @@ class _EvidenceRow extends StatelessWidget {
               padding: const EdgeInsets.only(right: Space.sm),
               child: Icon(Icons.image_outlined, size: 14, color: c.textTertiary),
             ),
-          Text(
-            friendlyDate(item.reading.readAt, now: now),
-            style: t.caption.copyWith(color: c.textSecondary),
+          Flexible(
+            child: Text(
+              friendlyDate(item.reading.readAt, now: now),
+              maxLines: 2,
+              textAlign: TextAlign.right,
+              style: t.caption.copyWith(color: c.textSecondary),
+            ),
           ),
         ],
       ),

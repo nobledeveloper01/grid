@@ -95,9 +95,21 @@ class _LitHero extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: Space.lg),
-                Text(
-                  headline,
-                  style: t.display.copyWith(color: c.onBrand, height: 1.05),
+                // Shrunk to fit rather than wrapped. At the larger
+                // accessibility sizes this figure broke mid-thousands —
+                // "₦65,7 / 80" — and a money amount split across two
+                // lines is less readable than the same amount a size down,
+                // not more. It still scales with Dynamic Type; it just stops
+                // growing once it would have to break.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    headline,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: t.display.copyWith(color: c.onBrand, height: 1.05),
+                  ),
                 ),
                 const SizedBox(height: Space.md),
                 Text(

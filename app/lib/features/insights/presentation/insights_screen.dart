@@ -197,9 +197,11 @@ class _Toggle extends StatelessWidget {
     final t = context.type;
     return Row(
       children: [
-        Text(
-          showCost ? 'What it cost' : 'What you used',
-          style: t.title.copyWith(color: c.textPrimary),
+        Flexible(
+          child: Text(
+            showCost ? 'What it cost' : 'What you used',
+            style: t.title.copyWith(color: c.textPrimary),
+          ),
         ),
         const Spacer(),
         if (canShowCost)

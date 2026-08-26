@@ -74,11 +74,13 @@ class HomeScreen extends ConsumerWidget {
                 BudgetCard(meterId: meter.id),
                 const SizedBox(height: Space.xl),
 
-                // At-a-glance figures.
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatTile(
+                // At-a-glance figures. Side by side at ordinary type sizes;
+                // stacked once type is large enough that two tiles in a row
+                // would each be a column of broken words.
+                Builder(
+                  builder: (context) {
+                    final tiles = [
+                      StatTile(
                         label: 'Tariff band',
                         value: meter.tariffBand == null
                             ? '—'
@@ -89,10 +91,7 @@ class HomeScreen extends ConsumerWidget {
                         tone: c.accent,
                         onTap: () => context.push(Routes.supplyTimeline),
                       ),
-                    ),
-                    const SizedBox(width: Space.md),
-                    Expanded(
-                      child: StatTile(
+                      StatTile(
                         label: 'Readings logged',
                         value: '${readings.length}',
                         caption: readings.isEmpty
@@ -102,8 +101,25 @@ class HomeScreen extends ConsumerWidget {
                         tone: c.supplyOn,
                         onTap: () => context.push(Routes.readingHistory),
                       ),
-                    ),
-                  ],
+                    ];
+
+                    if (MediaQuery.textScalerOf(context).scale(15) > 21) {
+                      return Column(
+                        children: [
+                          tiles.first,
+                          const SizedBox(height: Space.md),
+                          tiles.last,
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: tiles.first),
+                        const SizedBox(width: Space.md),
+                        Expanded(child: tiles.last),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: Space.xl),
@@ -400,8 +416,9 @@ class _UsagePreview extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: Space.xs,
                 children: [
                   Text(
                     series == null
@@ -409,7 +426,6 @@ class _UsagePreview extends ConsumerWidget {
                         : Kwh.fromDouble(series.dailyMean).format(),
                     style: t.title.copyWith(color: c.textPrimary),
                   ),
-                  const SizedBox(width: Space.xs),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2),
                     child: Text(
@@ -467,10 +483,16 @@ class _Greeting extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: Space.xs),
-                Row(
+                // A Wrap, not a Row. At the larger accessibility sizes the
+                // meter name and the DisCo chip overflowed the header by
+                // 190 logical pixels — a hard layout error, not a cosmetic
+                // one. The chip now drops to its own line instead.
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: Space.sm,
+                  runSpacing: Space.xs,
                   children: [
                     Text(meterLabel, style: t.headline),
-                    const SizedBox(width: Space.sm),
                     if (meter != null)
                       Container(
                         padding: const EdgeInsets.symmetric(

@@ -309,6 +309,15 @@ class _Group extends StatelessWidget {
   }
 }
 
+/// True once type is large enough that a label and its value cannot sit
+/// side by side without one of them wrapping and the other ellipsising.
+///
+/// Checked against the scaled size of a real style rather than a raw factor,
+/// so it tracks whatever the type scale does rather than a number that was
+/// true when this was written.
+bool _stacked(BuildContext context) =>
+    MediaQuery.textScalerOf(context).scale(15) > 21;
+
 /// A value that opens a sheet to edit it. Editing in place inside a list is
 /// how a settings screen ends up with a keyboard covering the field being
 /// typed into.
@@ -331,32 +340,53 @@ class _TextRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final t = context.type;
+    final shown = value?.isNotEmpty == true ? value! : 'Not set';
+    final valueStyle = t.body.copyWith(
+      color: value?.isNotEmpty == true ? c.textSecondary : c.textTertiary,
+    );
+
     return InkWell(
       onTap: () => _edit(context),
       child: Container(
         constraints: const BoxConstraints(minHeight: Targets.min),
         padding: const EdgeInsets.symmetric(vertical: Space.md),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(label, style: t.body.copyWith(color: c.textPrimary)),
-            ),
-            const SizedBox(width: Space.md),
-            Flexible(
-              child: Text(
-                value?.isNotEmpty == true ? value! : 'Not set',
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: t.body.copyWith(
-                  color: value?.isNotEmpty == true
-                      ? c.textSecondary
-                      : c.textTertiary,
-                ),
+        child: _stacked(context)
+            ? Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style: t.caption.copyWith(color: c.textSecondary)),
+                        const SizedBox(height: Space.xs),
+                        Text(shown, style: valueStyle),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: c.textTertiary),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: t.body.copyWith(color: c.textPrimary)),
+                  ),
+                  const SizedBox(width: Space.md),
+                  Flexible(
+                    child: Text(
+                      shown,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: valueStyle,
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: c.textTertiary),
+                ],
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 18, color: c.textTertiary),
-          ],
-        ),
       ),
     );
   }
@@ -433,23 +463,44 @@ class _PickerRow<T> extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: Targets.min),
         padding: const EdgeInsets.symmetric(vertical: Space.md),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(label, style: t.body.copyWith(color: c.textPrimary)),
-            ),
-            const SizedBox(width: Space.md),
-            Flexible(
-              child: Text(
-                nameOf(value),
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: t.body.copyWith(color: c.textSecondary),
+        child: _stacked(context)
+            ? Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style: t.caption.copyWith(color: c.textSecondary)),
+                        const SizedBox(height: Space.xs),
+                        Text(nameOf(value),
+                            style: t.body.copyWith(color: c.textPrimary)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: c.textTertiary),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: t.body.copyWith(color: c.textPrimary)),
+                  ),
+                  const SizedBox(width: Space.md),
+                  Flexible(
+                    child: Text(
+                      nameOf(value),
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.body.copyWith(color: c.textSecondary),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: c.textTertiary),
+                ],
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 18, color: c.textTertiary),
-          ],
-        ),
       ),
     );
   }

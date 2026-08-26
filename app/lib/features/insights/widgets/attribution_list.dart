@@ -173,18 +173,19 @@ class _Row extends StatelessWidget {
                     style: t.body.copyWith(color: c.textPrimary),
                   ),
                 ),
-                Text(
-                  attribution.modelledDaily.format(),
-                  style: t.caption.copyWith(color: estimateColour),
+                Flexible(
+                  child: Text(
+                    attribution.modelledDaily.format(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.caption.copyWith(color: estimateColour),
+                  ),
                 ),
                 const SizedBox(width: Space.md),
-                SizedBox(
-                  width: 44,
-                  child: Text(
-                    formatPercent(attribution.share),
-                    textAlign: TextAlign.right,
-                    style: t.caption.copyWith(color: c.textSecondary),
-                  ),
+                Text(
+                  formatPercent(attribution.share),
+                  textAlign: TextAlign.right,
+                  style: t.caption.copyWith(color: c.textSecondary),
                 ),
               ],
             ),

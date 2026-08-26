@@ -133,31 +133,32 @@ class _TrendChartState extends State<TrendChart> {
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      widget.formatValue?.call(scrubbed.value) ??
-                          scrubbed.value.toStringAsFixed(1),
-                      style: t.headline.copyWith(
-                        color: scrubbed.isInterpolated
-                            ? c.estimate
-                            : c.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: Space.xs),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
+                    Flexible(
                       child: Text(
-                        widget.valueLabel,
-                        style: t.caption.copyWith(color: c.textSecondary),
+                        '${widget.formatValue?.call(scrubbed.value) ?? scrubbed.value.toStringAsFixed(1)}'
+                        ' ${widget.valueLabel}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.headline.copyWith(
+                          color: scrubbed.isInterpolated
+                              ? c.estimate
+                              : c.textPrimary,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      _spanLabel(scrubbed) +
-                          (scrubbed.isInterpolated ? ' · estimated' : ''),
-                      style: t.caption.copyWith(
-                        color: scrubbed.isInterpolated
-                            ? c.estimate
-                            : c.textSecondary,
+                    const SizedBox(width: Space.sm),
+                    Flexible(
+                      child: Text(
+                        _spanLabel(scrubbed) +
+                            (scrubbed.isInterpolated ? ' · estimated' : ''),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: t.caption.copyWith(
+                          color: scrubbed.isInterpolated
+                              ? c.estimate
+                              : c.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -233,9 +234,14 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: Space.lg),
         _Swatch(colour: c.estimate, label: 'Estimated', dashed: true),
         const Spacer(),
-        Text(
-          '${_dayLabel(DateTime.now())} · today',
-          style: t.caption.copyWith(color: c.textTertiary),
+        Flexible(
+          child: Text(
+            '${_dayLabel(DateTime.now())} · today',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: t.caption.copyWith(color: c.textTertiary),
+          ),
         ),
       ],
     );
