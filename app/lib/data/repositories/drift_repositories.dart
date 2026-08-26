@@ -7,6 +7,7 @@ import '../../domain/entities/meter.dart';
 import '../../domain/entities/reading.dart';
 import '../../domain/entities/supply_event.dart';
 import '../../domain/repositories/repositories.dart';
+import '../../domain/services/allocation_engine.dart';
 import '../../domain/services/escalation_engine.dart';
 import '../../domain/value_objects/units.dart';
 import '../local/database.dart';
@@ -361,6 +362,53 @@ class DriftDisputeCaseRepository implements DisputeCaseRepository {
         notes: r.notes,
         packPath: r.packPath,
         createdAt: DateTime.fromMillisecondsSinceEpoch(r.createdAt),
+      );
+}
+
+class DriftOccupantRepository implements OccupantRepository {
+  DriftOccupantRepository(this._db, this._clock);
+
+  final GridDatabase _db;
+  final HlcClock _clock;
+
+  @override
+  Stream<List<Occupant>> watchForMeter(String meterId) =>
+      (_db.select(_db.occupants)..where((o) => o.meterId.equals(meterId)))
+          .watch()
+          .map((rows) => rows.map(_toDomain).toList());
+
+  @override
+  Future<List<Occupant>> getForMeter(String meterId) async {
+    final rows = await (_db.select(_db.occupants)
+          ..where((o) => o.meterId.equals(meterId)))
+        .get();
+    return rows.map(_toDomain).toList();
+  }
+
+  @override
+  Future<void> save(String meterId, Occupant o) =>
+      _db.into(_db.occupants).insertOnConflictUpdate(
+            OccupantsCompanion.insert(
+              id: o.id,
+              meterId: meterId,
+              name: o.name,
+              rooms: Value(o.rooms),
+              weight: Value(o.weight),
+              hlc: _clock
+                  .issue(DateTime.now().millisecondsSinceEpoch)
+                  .encode(),
+            ),
+          );
+
+  @override
+  Future<void> remove(String id) =>
+      (_db.delete(_db.occupants)..where((o) => o.id.equals(id))).go();
+
+  Occupant _toDomain(OccupantRow r) => Occupant(
+        id: r.id,
+        name: r.name,
+        rooms: r.rooms,
+        weight: r.weight,
       );
 }
 

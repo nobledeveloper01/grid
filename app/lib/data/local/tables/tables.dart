@@ -261,6 +261,24 @@ class GeneratorRuns extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// A household behind a shared meter. **State** — people move in and out.
+///
+/// The split they agreed to is state as well, and versioned by `hlc` like
+/// everything else, so a receipt regenerated for a past period can be shown
+/// to have used the rule that was in force then rather than the current one.
+@DataClassName('OccupantRow')
+class Occupants extends Table {
+  TextColumn get id => text()();
+  TextColumn get meterId => text().references(Meters, #id)();
+  TextColumn get name => text()();
+  IntColumn get rooms => integer().withDefault(const Constant(1))();
+  RealColumn get weight => real().withDefault(const Constant(1))();
+  TextColumn get hlc => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class AppSettings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();

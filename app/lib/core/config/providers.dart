@@ -9,6 +9,7 @@ import '../../data/local/hlc.dart';
 import '../../data/repositories/drift_repositories.dart';
 import '../../domain/repositories/repositories.dart';
 import '../../domain/services/band_adherence_engine.dart';
+import '../../domain/services/allocation_engine.dart';
 import '../../domain/services/compliance_engine.dart';
 import '../../domain/services/escalation_engine.dart';
 import '../../domain/services/consumption_engine.dart';
@@ -105,6 +106,16 @@ final applianceRepositoryProvider = Provider<ApplianceRepository>(
     ref.watch(hlcClockProvider),
   ),
 );
+
+final occupantRepositoryProvider = Provider<OccupantRepository>(
+  (ref) => DriftOccupantRepository(
+    ref.watch(databaseProvider),
+    ref.watch(hlcClockProvider),
+  ),
+);
+
+final allocationEngineProvider =
+    Provider<AllocationEngine>((ref) => const AllocationEngine());
 
 final generatorRepositoryProvider = Provider<GeneratorRepository>(
   (ref) => DriftGeneratorRepository(

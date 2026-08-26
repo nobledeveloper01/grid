@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../domain/entities/appliance.dart';
 import '../../domain/entities/generator.dart';
+import '../../domain/services/allocation_engine.dart';
 import '../../domain/entities/meter.dart';
 import '../../domain/entities/reading.dart';
 import '../../domain/entities/supply_event.dart';
@@ -36,6 +37,7 @@ class DemoSeed {
     required this.supply,
     required this.appliances,
     required this.generators,
+    required this.occupants,
     required this.uuid,
   });
 
@@ -45,6 +47,7 @@ class DemoSeed {
   final SupplyRepository supply;
   final ApplianceRepository appliances;
   final GeneratorRepository generators;
+  final OccupantRepository occupants;
   final String Function() uuid;
 
   static const bool enabled =
@@ -237,6 +240,21 @@ class DemoSeed {
         amount: Naira.fromNaira(litres * (1150 + rng.nextInt(120))),
         purchasedAt: now.subtract(Duration(days: w * 7 + 1)),
       ));
+    }
+
+    // --- the compound -----------------------------------------------------
+    // Three households behind one meter, which is the default arrangement in
+    // Nigerian rented accommodation and the argument this feature settles.
+    const households = [
+      ('Main house', 3),
+      ('Boys quarters', 1),
+      ('Shop in front', 1),
+    ];
+    for (final (name, rooms) in households) {
+      await occupants.save(
+        meterId,
+        Occupant(id: uuid(), name: name, rooms: rooms),
+      );
     }
 
     return meterId;

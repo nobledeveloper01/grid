@@ -1,6 +1,7 @@
 import '../entities/appliance.dart';
 import '../entities/dispute_case.dart';
 import '../entities/generator.dart';
+import '../services/allocation_engine.dart';
 import '../entities/meter.dart';
 import '../entities/reading.dart';
 import '../entities/supply_event.dart';
@@ -89,6 +90,13 @@ abstract interface class GeneratorRepository {
 
   /// The run still going, if any. There is deliberately only ever one.
   Future<GeneratorRun?> ongoingRun(String meterId);
+}
+
+abstract interface class OccupantRepository {
+  Stream<List<Occupant>> watchForMeter(String meterId);
+  Future<List<Occupant>> getForMeter(String meterId);
+  Future<void> save(String meterId, Occupant occupant);
+  Future<void> remove(String id);
 }
 
 abstract interface class SettingsRepository {

@@ -28,6 +28,7 @@ Future<void> main() async {
       supply: container.read(supplyRepositoryProvider),
       appliances: container.read(applianceRepositoryProvider),
       generators: container.read(generatorRepositoryProvider),
+      occupants: container.read(occupantRepositoryProvider),
       uuid: () => container.read(uuidProvider).v7(),
     ).run(now: container.read(clockProvider)());
   }

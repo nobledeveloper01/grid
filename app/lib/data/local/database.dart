@@ -23,6 +23,7 @@ part 'database.g.dart';
     Generators,
     FuelPurchases,
     GeneratorRuns,
+    Occupants,
     OutboxEntries,
     AppSettings,
   ],
@@ -32,7 +33,7 @@ class GridDatabase extends _$GridDatabase {
       : super(executor ?? driftDatabase(name: 'grid'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +55,10 @@ class GridDatabase extends _$GridDatabase {
             await m.createTable(generators);
             await m.createTable(fuelPurchases);
             await m.createTable(generatorRuns);
+          }
+          // 3 → 4 adds the households behind a shared meter.
+          if (from < 4) {
+            await m.createTable(occupants);
           }
           await _createIndices();
         },

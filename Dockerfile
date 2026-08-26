@@ -81,10 +81,12 @@ RUN set -eu; \
 # that two variables disagreed.
 ENV ANDROID_HOME=$ANDROID_SDK_ROOT
 
-RUN set -eux; \
-    yes | sdkmanager --licenses > /dev/null 2>&1 || true; \
-    sdkmanager --install "platforms;android-37" "build-tools;37.0.0" > /dev/null; \
-    test -d "$ANDROID_SDK_ROOT/platforms/android-37"
+# Gradle installs the platform it needs on first build. Pre-installing it with
+# `sdkmanager` does not work — the bundled command-line tools cannot see
+# `platforms;android-37` even after `--update`, while Gradle downloads the very
+# same package without complaint. The original failure was never a missing
+# platform: it was Gradle installing into one SDK root and looking in the
+# other, which the ENV above fixes.
 
 WORKDIR /app
 

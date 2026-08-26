@@ -180,6 +180,10 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.economics),
               ),
               _LinkRow(
+                label: 'Split the bill',
+                onTap: () => context.push(Routes.split),
+              ),
+              _LinkRow(
                 label: 'Appliances',
                 onTap: () => context.push(Routes.appliances),
               ),
