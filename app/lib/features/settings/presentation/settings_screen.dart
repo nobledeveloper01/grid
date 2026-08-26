@@ -203,6 +203,10 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.cases),
               ),
               _LinkRow(
+                label: 'Your area',
+                onTap: () => context.push(Routes.community),
+              ),
+              _LinkRow(
                 label: 'Backup',
                 onTap: () => context.push(Routes.backup),
               ),
