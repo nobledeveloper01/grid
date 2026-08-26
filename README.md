@@ -759,33 +759,39 @@ compose.yaml               verify / apk / shell
 Working end to end: install, log a reading, and the app takes you to a PDF you
 can hand over, and then counts the days while you wait for an answer.
 
-**274 tests. Domain engines at 98% line coverage.**
+**389 tests. Domain engines at 98% line coverage. The Go server's suites run twice — once
+against the in-memory store, once against Postgres.**
 
-| Component | State |
+| Phase | State |
 | --- | --- |
-| Onboarding, band estimation, offline first launch | Done |
-| Manual reading entry on the outdoor keypad | Done |
-| Camera capture and on-device OCR, behind a façade | Done — accuracy gate open, see below |
-| Immutable facts: readings, purchases, supply events | Done |
-| Consumption engine, incl. prepaid direction and mid-interval purchases | Done |
-| Depletion forecast and whole-cycle cost projection | Done |
-| Supply inference from charging state, debounced | Done |
-| Coverage accounting — unobserved time stays unknown | Done |
-| Band compliance with hysteresis | Done |
-| Band adherence valued in naira (F4) | Done |
-| Trend chart, hand-painted and scrubbable | Done |
-| Appliance inventory and modelled load attribution | Done |
-| Dispute packs — four templates, rendered to PDF | Done — 12 months in ~200 ms |
-| Escalation ladder and case tracking | Done — waiting periods unverified |
-| Budget mode (F7) | Done |
-| Cycle reading reminders (F8) | Done |
-| Settings: meter, tariff, supply detection | Done |
-| Accessibility: 200%+ text, screen-reader labels | Done |
-| Documentation gate, ADRs, journal | Done |
-| Docker: reproducible Android build | Done |
-| Token vault (F1), vendor watch (F5) | Not started |
-| Bill capture (F2), estimated-bill cap check (F3) | Not started |
-| Phases 6–10: backend, landlord console, generator and solar economics, many meters, more languages | Not started |
+| **0–2** Foundation, capture, on-device OCR | Done — OCR's accuracy gate carried against hardware |
+| **3** Supply inference and band compliance | Done — alerting scope set out in [ADR-0010](docs/adr/0010-alerts-are-raised-in-the-foreground-and-say-so.md) |
+| **3.5** Band adherence in naira, cycle reminders | Done — the token vault (F1) and vendor watch (F5) are not started |
+| **4** Trend chart, load attribution, budget | Done — bill capture (F2) and the estimated-bill cap check (F3) are not started |
+| **5** Dispute packs, escalation ladder, cases | Done — 12 months in ~200 ms against a 3,000 ms gate |
+| **6** Backend, tenant statements, Postgres | Done — batch reading and delta sync are not built |
+| **7** Inverter link, community outage map | **Both gates green.** What is built is what decides whether the feature is safe; the radio and the sending are not |
+| **8** Generator cost, solar sizing, appliance coach | Done |
+| **9** Several meters, compound split, encrypted backup | Done — per-period rule versioning is open |
+| **10** Home-screen widget, five languages | **Not built** — see below |
+
+### Phase 10, and why it is not a matter of time
+
+Both halves need something this repository cannot supply, and shipping either badly would be
+worse than shipping neither.
+
+The **widget** needs native extension targets — WidgetKit on iOS, an App Widget provider on
+Android — on a machine where [the Android half has never once compiled](#4-quick-start). What
+*is* built and tested is the part with the engineering in it: the snapshot the widget reads,
+its staleness rule, and the guarantee that anything unreadable is a quiet nothing rather than
+a crash. A widget that crashes is a blank rectangle on somebody's home screen with no way to
+report itself.
+
+The **languages** need a person. The backlog said from the start that tariff bands, estimated
+billing and depletion dates are terms with settled local phrasing, and that getting them
+wrong reads as an app that does not know the country. Machine-translating regulatory
+vocabulary into a document somebody hands a regulator is not a shortcut — it is a way to put
+a wrong word in front of the one audience that will notice. That is a translator's job.
 
 ### What is open, and why it matters
 
