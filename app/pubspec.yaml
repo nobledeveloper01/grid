@@ -86,6 +86,17 @@ flutter:
   assets:
     - assets/data/
 
+  # Bundled, not downloaded. A runtime font fetch would put a network call in
+  # front of the first frame, which is exactly what this product must not do.
+  # Both are variable fonts; Flutter interpolates the weight axis.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono.ttf
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

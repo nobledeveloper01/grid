@@ -38,7 +38,7 @@ class SelectableCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: Radii.mdAll,
         child: Container(
-          constraints: const BoxConstraints(minHeight: Targets.outdoor),
+          constraints: const BoxConstraints(minHeight: Targets.control),
           padding: const EdgeInsets.all(Space.lg),
           decoration: BoxDecoration(
             color: selected ? c.accentSoft : c.surfaceDim,

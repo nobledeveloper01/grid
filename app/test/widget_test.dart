@@ -94,6 +94,56 @@ void main() {
       }
     });
 
+    test('button labels are legible on the brand fill', () {
+      // Amber is too light to carry white text. onBrand is a warm near-black
+      // for exactly this reason, and it has to clear 4.5:1.
+      for (final c in [GridColors.light, GridColors.dark]) {
+        expect(contrastRatio(c.onBrand, c.brand), greaterThanOrEqualTo(4.5));
+      }
+    });
+
+    test('brandDeep is legible as text on both light surfaces', () {
+      // brand itself is a fill colour. brandDeep exists so brand-flavoured
+      // *text* has somewhere legible to live.
+      for (final c in [GridColors.light, GridColors.dark]) {
+        expect(contrastRatio(c.brandDeep, c.surface), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(c.brandDeep, c.surfaceDim), greaterThanOrEqualTo(4.0));
+      }
+    });
+
+    test('soft tints stay legible under their own foreground', () {
+      for (final c in [GridColors.light, GridColors.dark]) {
+        expect(contrastRatio(c.textPrimary, c.brandSoft), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(c.textPrimary, c.surfaceRaised), greaterThanOrEqualTo(4.5));
+      }
+    });
+
+    test('semantic colours clear 3:1 against the surface', () {
+      for (final c in [GridColors.light, GridColors.dark]) {
+        for (final entry in {
+          'estimate': c.estimate,
+          'warning': c.warning,
+          'danger': c.danger,
+          'accent': c.accent,
+        }.entries) {
+          expect(
+            contrastRatio(entry.value, c.surface),
+            greaterThanOrEqualTo(3.0),
+            reason: '\${entry.key} on surface',
+          );
+        }
+      }
+    });
+
+    test('the hero gradient carries its own foreground', () {
+      // The hero sets its own text colour rather than inheriting, so both
+      // ends of the gradient have to work under it.
+      for (final c in [GridColors.light, GridColors.dark]) {
+        expect(contrastRatio(c.onBrand, c.gradientStart), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(c.onBrand, c.gradientEnd), greaterThanOrEqualTo(3.0));
+      }
+    });
+
     test('supply on and off separate in lightness, not only in hue', () {
       // Green and red at matching luminance vanish into each other in
       // greyscale and for a red-green colour-blind viewer. The palette
@@ -112,12 +162,14 @@ void main() {
   });
 
   group('SelectableCard', () {
-    testWidgets('meets the outdoor minimum target height', (tester) async {
+    testWidgets('clears the standard control height', (tester) async {
       await tester.pumpWidget(
         _wrap(SelectableCard(title: 'Prepaid meter', onTap: () {})),
       );
       final size = tester.getSize(find.byType(SelectableCard));
-      expect(size.height, greaterThanOrEqualTo(Targets.outdoor));
+      expect(size.height, greaterThanOrEqualTo(Targets.control));
+      expect(size.height, greaterThanOrEqualTo(Targets.min),
+          reason: 'never below the accessibility floor');
     });
 
     testWidgets('marks selection with an icon, not colour alone',

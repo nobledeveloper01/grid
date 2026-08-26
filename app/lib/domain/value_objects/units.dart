@@ -59,6 +59,15 @@ extension type const Naira._(int kobo) implements Object {
   bool operator >(Naira other) => kobo > other.kobo;
   bool get isZero => kobo == 0;
 
+  /// A thin space (U+2009) after the naira sign.
+  ///
+  /// ₦ is drawn as an N with two full-width crossbars, and those bars run
+  /// into the first digit — at caption sizes "₦209" reads as struck through,
+  /// which on a bill is exactly the wrong impression. A hair of space clears
+  /// the bars without looking like a gap. Verified on device at 12, 16, 20
+  /// and 28sp.
+  static const String naira = '₦\u2009';
+
   /// Naira with thousands separators, no kobo. Kobo are noise at the
   /// magnitudes this product deals in.
   String format() {
@@ -69,7 +78,7 @@ extension type const Naira._(int kobo) implements Object {
       if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
       buffer.write(digits[i]);
     }
-    return '${whole < 0 ? '-' : ''}₦$buffer';
+    return '${whole < 0 ? '-' : ''}$naira$buffer';
   }
 }
 
@@ -87,5 +96,5 @@ extension type const Rate._(int koboPerKwh) implements Object {
       ? Kwh.zero
       : Kwh.fromMilli((amount.kobo * 1000 / koboPerKwh).round());
 
-  String format() => '₦${value.toStringAsFixed(2)}/kWh';
+  String format() => '${Naira.naira}${value.toStringAsFixed(2)}/kWh';
 }

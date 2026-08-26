@@ -413,7 +413,7 @@ void main() {
     });
 
     test('scales', () {
-      expect((Naira.fromNaira(1000) * 1.1).format(), '₦1,100');
+      expect((Naira.fromNaira(1000) * 1.1).format(), '${Naira.naira}1,100');
     });
   });
 }

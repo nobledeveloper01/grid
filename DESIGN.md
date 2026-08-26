@@ -29,23 +29,34 @@ displayed, not hidden.
 Electricity has states, and states have colours: available, unavailable, unknown. Everything
 else is neutral so those three read instantly.
 
+**Amber is the brand, and that is semantic before it is aesthetic.** This is a product about
+electricity — current, warmth, sunlight, the moment the light comes back on. A cool corporate
+blue or a clinical grey says "utility bill". Amber says "power", and it is the colour of the
+thing the user is actually trying to get more of. The neutrals are warm greys throughout, so
+the whole app reads as lit rather than as administrative.
+
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `surface` | `#FFFFFF` | `#0E1114` | Page background |
-| `surfaceDim` | `#F4F5F7` | `#181D22` | Cards, input fill |
-| `surfaceInverse` | `#101418` | `#F4F5F7` | Camera scrim, tooltips |
-| `outline` | `#D7DBE0` | `#2A3138` | Dividers, borders |
-| `textPrimary` | `#101418` | `#EDEFF2` | Body, figures |
-| `textSecondary` | `#5A626B` | `#A2AAB3` | Labels, captions |
-| `textTertiary` | `#8B939C` | `#6D767F` | Disabled, placeholder |
-| `accent` | `#0B7A4B` | `#3FBF83` | Primary action, brand |
-| `accentSoft` | `#E4F3EB` | `#122A20` | Selected state |
-| `supplyOn` | `#0B7A4B` | `#3FBF83` | Power available |
+| `surface` | `#FFFFFF` | `#12100C` | Page background |
+| `surfaceDim` | `#F7F5F1` | `#1D1A14` | Input fill, tracks |
+| `surfaceRaised` | `#FFFFFF` | `#242019` | Cards that lift off the page |
+| `outline` | `#E6E1D8` | `#332E25` | Dividers, borders |
+| `outlineStrong` | `#CFC7B9` | `#4A4335` | Focused fields, selected cards |
+| `textPrimary` | `#16130E` | `#F5F1EA` | Body, figures |
+| `textSecondary` | `#565044` | `#B3AB9C` | Labels, captions |
+| `textTertiary` | `#7D7566` | `#847C6D` | Disabled, placeholder |
+| `brand` | `#F59E0B` | `#FFB020` | Fills, gradients, primary buttons |
+| `brandDeep` | `#9A5B00` | `#FFC85C` | Brand colour **as text** |
+| `brandSoft` | `#FFF3DC` | `#2E2211` | Selected states, tinted surfaces |
+| `onBrand` | `#1A1206` | `#1A1206` | What sits on top of `brand` |
+| `gradientStart` → `gradientEnd` | `#FFB020` → `#F06D1E` | `#FFB020` → `#E0601A` | The hero gradient |
+| `accent` | `#1D4ED8` | `#7BA5F5` | The cool counterweight |
+| `supplyOn` | `#067A4E` | `#3FCB8A` | Power available |
 | `supplyOff` | `#7E1A13` | `#C4544A` | Power unavailable |
-| `supplyUnknown` | `#B6BCC3` | `#3A424A` | No data |
-| `warning` | `#B4690E` | `#E0A44A` | Validation warnings, anomalies |
-| `danger` | `#C2352B` | `#E8695E` | Destructive, breach |
-| `estimate` | `#7A6BC4` | `#9E90DE` | Modelled or interpolated values |
+| `supplyUnknown` | `#BDB6A8` | `#3E382E` | No data |
+| `warning` | `#9A5B00` | `#E8B057` | Validation warnings, anomalies |
+| `danger` | `#B3261E` | `#E8695E` | Destructive, breach |
+| `estimate` | `#6D4AC4` | `#A78BFA` | Modelled or interpolated values |
 
 **Rules**
 
@@ -59,6 +70,11 @@ else is neutral so those three read instantly.
   test in `test/widget_test.dart` asserts the separation, and a second asserts each state
   clears 3:1 against its surface.
 - All body text meets 4.5:1 in both themes. Asserted in CI, not assumed.
+- **Amber never carries white text.** It is too light to reach 4.5:1. `onBrand` is a warm
+  near-black, which is both legible and better-looking. `brandDeep` exists for the separate
+  case of brand-coloured *text* on a light surface.
+- The gradient appears on **exactly one card per screen**. That scarcity is what makes it
+  read as "the thing you came for" rather than as decoration.
 
 ## Type
 
@@ -68,18 +84,25 @@ physical meter face.
 
 | Style | Size / Line | Use |
 |---|---|---|
-| `display` | 40 / 44 | The one number that matters on a screen |
-| `headline` | 28 / 34 | Screen titles |
-| `title` | 20 / 26 | Section headers, card titles |
-| `body` | 16 / 24 | Default |
-| `bodyStrong` | 16 / 24 | Emphasis |
-| `label` | 14 / 20 | Form labels, chips |
+| `display` | 30 / 36 | The one number that matters on a screen |
+| `headline` | 22 / 28 | Screen titles |
+| `title` | 17 / 23 | Section headers, card titles |
+| `body` | 15 / 22 | Default |
+| `bodyStrong` | 15 / 22 | Emphasis |
+| `label` | 13 / 18 | Form labels, chips |
 | `caption` | 12 / 16 | Metadata, timestamps, coverage notes |
-| `meter` | 32 / 36 mono tabular | Meter readings |
-| `figure` | 20 / 26 mono tabular | Table figures, statement arithmetic |
+| `meter` | 26 / 30 mono tabular | Meter readings |
+| `figure` | 17 / 23 mono tabular | Table figures, statement arithmetic |
 
-Minimum body size is 16 sp. Every P0 screen survives 200% OS text scaling — no fixed-height
-containers around text, no single-line constraints on labels.
+**The monospace face is for figures, never for words.** "Band A" set in a tabular font reads
+as a wide, broken string; components that can carry either take an `isNumeric` flag.
+
+**Both faces are bundled, not downloaded.** They are variable fonts, so every style sets
+`fontVariations` on the `wght` axis — `fontWeight` alone is silently ignored on a variable
+font and every weight comes out identical.
+
+Every P0 screen survives 200% OS text scaling — no fixed-height containers around text, no
+single-line constraints on labels.
 
 ## Space, shape, targets
 
@@ -91,8 +114,10 @@ Radius: `sm 8` inputs and chips · `md 12` cards · `lg 20` sheets.
 Elevation is used sparingly. Cards are delineated by `outline` and `surfaceDim`, not shadow —
 flat surfaces render faster on low-end GPUs, which is the second reason.
 
-**Targets: 48 dp minimum. 64 dp on the capture screen and any control used outdoors. The
-capture button is 80 dp.**
+**Targets.** 48 dp is the accessibility floor. Standard buttons and rows are **52 dp**
+(`Targets.control`) — a full-width 64 dp button reads as a landing page, not as a tool.
+**64 dp** (`Targets.outdoor`) is reserved for controls actually used at a meter: the capture
+screen and the reading keypad. The capture button itself is 76 dp.
 
 ## Breakpoints
 

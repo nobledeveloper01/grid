@@ -1,67 +1,118 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+
+import '../../domain/services/digit_extractor.dart';
+import '../../domain/value_objects/enums.dart';
+
 /// On-device text recognition.
 ///
-/// Declared as a façade with a null implementation so nothing in the app
-/// depends on a specific OCR engine.
+/// **Why this is a façade and not a package dependency.** Google's ML Kit iOS
+/// pods ship no arm64 simulator slice, so a direct dependency makes the app
+/// un-installable on an Apple Silicon simulator — which is every current Mac.
+/// See ADR-0004.
 ///
-/// **Why this is a façade and not a direct dependency.** Google's ML Kit iOS
-/// pods ship no arm64 simulator slice, so taking a direct dependency makes
-/// the whole app un-installable on an Apple Silicon simulator — which is
-/// every current Mac. Isolating it here means OCR can be:
-///
-///   * ML Kit on Android,
-///   * Apple's Vision framework via a platform channel on iOS,
-///   * or absent, with manual entry carrying the flow.
-///
-/// FR-2.2 already requires that OCR never blocks: a failure falls through to
-/// manual entry without being framed as an error. [NullTextRecogniser] is
-/// simply that fallback made explicit, and it keeps the app honest on a
-/// platform where recognition genuinely is not available.
-library;
-
-/// One digit run found in an image, with per-character confidence.
-class RecognisedDigits {
-  const RecognisedDigits({
-    required this.digits,
-    required this.confidence,
-    this.rawText,
-  });
-
-  final String digits;
-
-  /// 0.0–1.0. Below 0.60 the caller must fall back to manual entry; below
-  /// 0.80 individual characters are marked uncertain in the UI.
-  final double confidence;
-
-  final String? rawText;
-
-  static const double manualFallbackThreshold = 0.60;
-  static const double uncertainCharacterThreshold = 0.80;
-
-  bool get isUsable => confidence >= manualFallbackThreshold;
-}
-
+/// The engine is therefore chosen per platform behind this interface: ML Kit
+/// on Android, Apple's Vision framework on iOS. Both are better than the
+/// cross-platform package, and neither can hold simulator development hostage.
 abstract interface class TextRecogniser {
-  /// Whether recognition is available at all on this device and platform.
-  /// The capture UI hides the camera path entirely when it is not.
+  /// Whether recognition works on this device and platform. The capture UI
+  /// hides the camera path entirely when it does not, rather than offering a
+  /// button that fails.
   Future<bool> get isAvailable;
 
   /// Extracts the most likely meter-register digit run from an image.
   ///
-  /// Returns null when nothing usable was found. Must complete within
-  /// [budget] or abandon — under no circumstance does the user wait on a
-  /// spinner at a meter at night (FR-2.2).
-  Future<RecognisedDigits?> readDigits(
+  /// Returns null when nothing usable was found. Completes within [budget] or
+  /// abandons — under no circumstance does the user wait on a spinner at a
+  /// meter at night (FR-2.2).
+  Future<ExtractedReading?> readDigits(
     String imagePath, {
+    MeterType? meterType,
     int? expectedDigitCount,
     Duration budget = const Duration(milliseconds: 1500),
   });
 }
 
-/// The no-op implementation used where no engine is wired up.
+/// Talks to the native recogniser over a method channel, then hands the raw
+/// blocks to the pure-Dart [DigitExtractor] to choose the register.
 ///
-/// Reports itself unavailable rather than pretending to work, so the UI
-/// routes straight to manual entry instead of offering a camera path that
-/// would fail.
+/// The split matters: the native side does recognition and nothing else, so
+/// the selection logic — the part with the judgement in it — stays testable
+/// without a device and identical on both platforms.
+class PlatformTextRecogniser implements TextRecogniser {
+  const PlatformTextRecogniser({
+    this.channel = const MethodChannel('grid/text_recogniser'),
+    this.extractor = const DigitExtractor(),
+  });
+
+  final MethodChannel channel;
+  final DigitExtractor extractor;
+
+  @override
+  Future<bool> get isAvailable async {
+    try {
+      final available = await channel.invokeMethod<bool>('isAvailable');
+      return available ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      // No native side registered — a legitimate state, not an error.
+      return false;
+    }
+  }
+
+  @override
+  Future<ExtractedReading?> readDigits(
+    String imagePath, {
+    MeterType? meterType,
+    int? expectedDigitCount,
+    Duration budget = const Duration(milliseconds: 1500),
+  }) async {
+    try {
+      final raw = await channel.invokeMethod<List<dynamic>>(
+        'recognise',
+        {'path': imagePath},
+      ).timeout(budget);
+
+      if (raw == null || raw.isEmpty) return null;
+
+      final blocks = <TextBlock>[];
+      for (final entry in raw) {
+        final map = (entry as Map).cast<String, dynamic>();
+        blocks.add(
+          TextBlock(
+            text: map['text'] as String? ?? '',
+            confidence: (map['confidence'] as num?)?.toDouble() ?? 1.0,
+            left: (map['left'] as num?)?.toDouble() ?? 0,
+            top: (map['top'] as num?)?.toDouble() ?? 0,
+            width: (map['width'] as num?)?.toDouble() ?? 0,
+            height: (map['height'] as num?)?.toDouble() ?? 0,
+          ),
+        );
+      }
+
+      return extractor.extract(
+        blocks: blocks,
+        meterType: meterType,
+        expectedDigitCount: expectedDigitCount,
+      );
+    } on TimeoutException {
+      // Budget blown. Abandon rather than keep the user waiting; the capture
+      // flow drops to manual entry with the photograph already taken.
+      return null;
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+}
+
+/// Used where no engine is wired up.
+///
+/// Reports itself unavailable rather than pretending to work, so the UI routes
+/// straight to manual entry instead of offering a camera path that would fail.
 class NullTextRecogniser implements TextRecogniser {
   const NullTextRecogniser();
 
@@ -69,8 +120,9 @@ class NullTextRecogniser implements TextRecogniser {
   Future<bool> get isAvailable async => false;
 
   @override
-  Future<RecognisedDigits?> readDigits(
+  Future<ExtractedReading?> readDigits(
     String imagePath, {
+    MeterType? meterType,
     int? expectedDigitCount,
     Duration budget = const Duration(milliseconds: 1500),
   }) async =>

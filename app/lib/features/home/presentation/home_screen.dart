@@ -10,9 +10,11 @@ import '../../../core/utils/formatters.dart';
 import '../../../domain/value_objects/enums.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
+import '../../../shared/widgets/stat_tile.dart';
 import '../../../shared/widgets/supply_strip.dart';
 import '../../meter/application/meter_providers.dart';
 import '../widgets/hero_card.dart';
+import '../widgets/section_header.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -20,7 +22,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meter = ref.watch(selectedMeterProvider);
-    final t = context.type;
     final c = context.colors;
 
     // Meters come from local storage and arrive in milliseconds. There is no
@@ -33,125 +34,124 @@ class HomeScreen extends ConsumerWidget {
     final readings = ref.watch(readingsProvider(meter.id)).value ?? const [];
     final week = ref.watch(weekSupplyProvider(meter.id));
     final compliance = ref.watch(complianceProvider(meter.id));
+    final rate = ref.watch(effectiveRateProvider(meter.id));
     final now = ref.watch(clockProvider)();
 
     return GridScaffold(
       showBack: false,
-      body: ListView(
-        children: [
-          const SizedBox(height: Space.lg),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      padded: false,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _Greeting(meterLabel: meter.label)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.lg,
+              0,
+              Space.lg,
+              Space.xxxl + Space.xxl,
+            ),
+            sliver: SliverList.list(
+              children: [
+                const HeroCard(),
+                const SizedBox(height: Space.xl),
+
+                // At-a-glance figures.
+                Row(
                   children: [
-                    Text(meter.label, style: t.title),
-                    Text(
-                      '${meter.disco.code}'
-                      '${meter.tariffBand != null ? ' · Band ${meter.tariffBand!.label}' : ''}',
-                      style: t.caption.copyWith(color: c.textSecondary),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Tariff band',
+                        value: meter.tariffBand == null
+                            ? '—'
+                            : 'Band ${meter.tariffBand!.label}',
+                        caption: rate?.format(),
+                        isNumeric: false,
+                        icon: Icons.local_offer_rounded,
+                        tone: c.accent,
+                        onTap: () => context.push(Routes.supplyTimeline),
+                      ),
+                    ),
+                    const SizedBox(width: Space.md),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Readings logged',
+                        value: '${readings.length}',
+                        caption: readings.isEmpty
+                            ? 'None yet'
+                            : relativeTime(readings.first.readAt, now: now),
+                        icon: Icons.timeline_rounded,
+                        tone: c.supplyOn,
+                        onTap: () => context.push(Routes.readingHistory),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: () => context.push(Routes.readingHistory),
-                icon: const Icon(Icons.history),
-                tooltip: 'Reading history',
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.xl),
 
-          // The hero: the one number that matters, chosen by meter type.
-          const HeroCard(),
+                const SizedBox(height: Space.xl),
 
-          const SizedBox(height: Space.xl),
-
-          // Supply strip.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Last 7 days', style: t.label),
-              TextButton(
-                onPressed: () => context.push(Routes.supplyTimeline),
-                child: const Text('Power log'),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.sm),
-          SupplyStrip(days: week),
-
-          if (compliance != null && compliance.canRaiseAlert) ...[
-            const SizedBox(height: Space.lg),
-            InfoNote(
-              tone: NoteTone.warning,
-              message: "You're on Band ${compliance.band.label}, which "
-                  'promises ${compliance.band.committedHours} hours a day. '
-                  "You've been getting "
-                  '${formatHours(compliance.summary.rollingAverageHours)}.',
-            ),
-          ],
-
-          const SizedBox(height: Space.xl),
-          Text('Recent readings', style: t.label),
-          const SizedBox(height: Space.sm),
-          if (readings.isEmpty)
-            InfoNote(
-              message: meter.type.isReadable
-                  ? 'No readings yet. Log one and Grid starts working.'
-                  : "You have no meter to read, so tell Grid what you run "
-                      'instead — it will work out what you actually use.',
-            )
-          else
-            for (final r in readings.take(3))
-              Padding(
-                padding: const EdgeInsets.only(bottom: Space.sm),
-                child: Container(
-                  padding: const EdgeInsets.all(Space.lg),
-                  decoration: BoxDecoration(
-                    color: c.surfaceDim,
-                    borderRadius: Radii.mdAll,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(r.value.format(), style: t.figure),
-                            Text(
-                              relativeTime(r.readAt, now: now),
-                              style: t.caption
-                                  .copyWith(color: c.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (r.excludedFromBaseline)
-                        Icon(Icons.flag_outlined,
-                            size: 18, color: c.warning),
-                      if (r.source == ReadingSource.ocr)
-                        Icon(Icons.camera_alt_outlined,
-                            size: 18, color: c.textTertiary),
-                    ],
-                  ),
+                SectionHeader(
+                  title: 'Power this week',
+                  action: 'Power log',
+                  onAction: () => context.push(Routes.supplyTimeline),
                 ),
-              ),
-          const SizedBox(height: Space.xxxl),
+                const SizedBox(height: Space.md),
+                SupplyStrip(days: week),
+
+                if (compliance != null && compliance.canRaiseAlert) ...[
+                  const SizedBox(height: Space.lg),
+                  InfoNote(
+                    tone: NoteTone.warning,
+                    icon: Icons.gavel_rounded,
+                    message: "You're on Band ${compliance.band.label}, which "
+                        'promises ${compliance.band.committedHours} hours a '
+                        "day. You've been getting "
+                        '${formatHours(compliance.summary.rollingAverageHours)}.',
+                  ),
+                ],
+
+                const SizedBox(height: Space.xl),
+                SectionHeader(
+                  title: 'Recent readings',
+                  action: readings.isEmpty ? null : 'See all',
+                  onAction: readings.isEmpty
+                      ? null
+                      : () => context.push(Routes.readingHistory),
+                ),
+                const SizedBox(height: Space.md),
+
+                if (readings.isEmpty)
+                  InfoNote(
+                    icon: Icons.speed_rounded,
+                    message: meter.type.isReadable
+                        ? 'No readings yet. Log one and Grid starts working.'
+                        : 'You have no meter to read, so tell Grid what you '
+                            'run instead — it will work out what you actually '
+                            'use.',
+                  )
+                else
+                  for (final (i, r) in readings.take(3).indexed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: Space.sm),
+                      child: _ReadingRow(
+                        value: r.value.format(),
+                        when: relativeTime(r.readAt, now: now),
+                        isFlagged: r.excludedFromBaseline,
+                        source: r.source,
+                        index: i,
+                      ),
+                    ),
+              ],
+            ),
+          ),
         ],
       ),
-      // Both buttons are Expanded: the button themes set a full-width
-      // minimum size, which is infinite width and blows up as a bare Row
-      // child. Expanded gives them a bounded width to stretch into.
       bottom: Row(
         children: [
           Expanded(
             flex: 3,
             child: FilledButton.icon(
               onPressed: () => context.push(Routes.manualEntry),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: const Text('Log reading'),
             ),
           ),
@@ -160,15 +160,226 @@ class HomeScreen extends ConsumerWidget {
             Expanded(
               flex: 2,
               child: SizedBox(
-                height: Targets.outdoor,
-                child: OutlinedButton(
+                height: Targets.control,
+                child: OutlinedButton.icon(
                   onPressed: () => context.push(Routes.purchaseEntry),
-                  child: const Text('Bought units'),
+                  icon: const Icon(Icons.add_card_rounded, size: 18),
+                  label: const Text('Units'),
                 ),
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// The page header, sitting on a warm wash so the screen does not open on a
+/// flat white sheet.
+class _Greeting extends ConsumerWidget {
+  const _Greeting({required this.meterLabel});
+
+  final String meterLabel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final t = context.type;
+    final meter = ref.watch(selectedMeterProvider);
+    final now = ref.watch(clockProvider)();
+
+    final greeting = switch (now.hour) {
+      < 12 => 'Good morning',
+      < 17 => 'Good afternoon',
+      _ => 'Good evening',
+    };
+
+    return Container(
+      decoration: BoxDecoration(gradient: c.washGradient),
+      padding: const EdgeInsets.fromLTRB(Space.lg, Space.lg, Space.lg, Space.xl),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  style: t.caption.copyWith(
+                    color: c.textSecondary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: Space.xs),
+                Row(
+                  children: [
+                    Text(meterLabel, style: t.headline),
+                    const SizedBox(width: Space.sm),
+                    if (meter != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.sm,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: c.accentSoft,
+                          borderRadius: Radii.smAll,
+                        ),
+                        child: Text(
+                          meter.disco.code,
+                          style: t.caption.copyWith(
+                            color: c.accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _RoundIconButton(
+            icon: Icons.history_rounded,
+            tooltip: 'Reading history',
+            onPressed: () => context.push(Routes.readingHistory),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: c.surfaceRaised,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: Targets.min,
+            height: Targets.min,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: c.outline),
+            ),
+            child: Icon(icon, size: 20, color: c.textPrimary),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadingRow extends StatelessWidget {
+  const _ReadingRow({
+    required this.value,
+    required this.when,
+    required this.isFlagged,
+    required this.source,
+    required this.index,
+  });
+
+  final String value;
+  final String when;
+  final bool isFlagged;
+  final ReadingSource source;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final t = context.type;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Motion.page + Motion.stagger * index,
+      curve: Curves.easeOutCubic,
+      builder: (context, v, child) => Opacity(
+        opacity: v,
+        child: Transform.translate(offset: Offset(0, (1 - v) * 8), child: child),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(Space.lg),
+        decoration: BoxDecoration(
+          color: c.surfaceRaised,
+          borderRadius: Radii.mdAll,
+          border: Border.all(color: c.outline),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(Space.sm),
+              decoration: BoxDecoration(
+                color: c.brandSoft,
+                borderRadius: Radii.smAll,
+              ),
+              child: Icon(
+                switch (source) {
+                  ReadingSource.ocr => Icons.center_focus_strong_rounded,
+                  ReadingSource.manual => Icons.keyboard_rounded,
+                  ReadingSource.imported => Icons.download_rounded,
+                },
+                size: 18,
+                color: c.brandDeep,
+              ),
+            ),
+            const SizedBox(width: Space.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: t.figure),
+                  Text(
+                    when,
+                    style: t.caption.copyWith(color: c.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            if (isFlagged)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.sm,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: c.warningSoft,
+                  borderRadius: Radii.smAll,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.flag_rounded, size: 12, color: c.warning),
+                    const SizedBox(width: Space.xs),
+                    Text(
+                      'Flagged',
+                      style: t.caption.copyWith(
+                        color: c.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

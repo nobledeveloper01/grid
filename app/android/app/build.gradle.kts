@@ -47,3 +47,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // On-device Latin text recognition, bundled rather than downloaded so the
+    // first capture works with no network. ML Kit is the right engine here;
+    // it is only unusable on iOS, which uses Vision instead. See ADR-0004.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+}

@@ -134,4 +134,10 @@ final loadModelEngineProvider =
 /// it reports false. See core/platform/text_recogniser.dart for why this is
 /// a façade rather than a direct ML Kit dependency.
 final textRecogniserProvider =
-    Provider<TextRecogniser>((ref) => const NullTextRecogniser());
+    Provider<TextRecogniser>((ref) => const PlatformTextRecogniser());
+
+/// Whether the camera path should be offered at all. The capture screen hides
+/// it rather than showing a button that fails.
+final ocrAvailableProvider = FutureProvider<bool>(
+  (ref) => ref.watch(textRecogniserProvider).isAvailable,
+);

@@ -42,47 +42,62 @@ class GridTypography extends ThemeExtension<GridTypography> {
   /// Tabular figures so digits align in a column.
   static const _tabular = <FontFeature>[FontFeature.tabularFigures()];
 
+  /// Inter and Roboto Mono ship as *variable* fonts. Flutter renders a
+  /// variable font at its default instance unless the axis is named
+  /// explicitly, so `fontWeight` alone silently does nothing — every weight
+  /// comes out looking the same. `fontVariations` drives the `wght` axis
+  /// directly; `fontWeight` is kept alongside it so the value is still right
+  /// if a static instance is ever substituted.
+  static List<FontVariation> _wght(double weight) =>
+      [FontVariation('wght', weight)];
+
   static GridTypography of(Color primary) => GridTypography(
         display: TextStyle(
           fontFamily: _sans,
-          fontSize: 40,
-          height: 44 / 40,
+          fontSize: 30,
+          height: 36 / 30,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           color: primary,
         ),
         headline: TextStyle(
           fontFamily: _sans,
-          fontSize: 28,
-          height: 34 / 28,
+          fontSize: 22,
+          height: 28 / 22,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           color: primary,
         ),
         title: TextStyle(
           fontFamily: _sans,
-          fontSize: 20,
-          height: 26 / 20,
+          fontSize: 17,
+          height: 23 / 17,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           color: primary,
         ),
         body: TextStyle(
           fontFamily: _sans,
-          fontSize: 16,
-          height: 24 / 16,
+          fontSize: 15,
+          height: 22 / 15,
           fontWeight: FontWeight.w400,
+          fontVariations: _wght(400),
           color: primary,
         ),
         bodyStrong: TextStyle(
           fontFamily: _sans,
-          fontSize: 16,
-          height: 24 / 16,
+          fontSize: 15,
+          height: 22 / 15,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           color: primary,
         ),
         label: TextStyle(
           fontFamily: _sans,
-          fontSize: 14,
-          height: 20 / 14,
+          fontSize: 13,
+          height: 18 / 13,
           fontWeight: FontWeight.w500,
+          fontVariations: _wght(500),
           color: primary,
         ),
         caption: TextStyle(
@@ -90,21 +105,24 @@ class GridTypography extends ThemeExtension<GridTypography> {
           fontSize: 12,
           height: 16 / 12,
           fontWeight: FontWeight.w400,
+          fontVariations: _wght(400),
           color: primary,
         ),
         meter: TextStyle(
           fontFamily: _mono,
-          fontSize: 32,
-          height: 36 / 32,
+          fontSize: 26,
+          height: 30 / 26,
           fontWeight: FontWeight.w500,
+          fontVariations: _wght(500),
           fontFeatures: _tabular,
           color: primary,
         ),
         figure: TextStyle(
           fontFamily: _mono,
-          fontSize: 20,
-          height: 26 / 20,
+          fontSize: 17,
+          height: 23 / 17,
           fontWeight: FontWeight.w500,
+          fontVariations: _wght(500),
           fontFeatures: _tabular,
           color: primary,
         ),

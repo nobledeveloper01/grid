@@ -29,14 +29,23 @@ void main() {
 
   group('Naira', () {
     test('formats with thousands separators and no kobo', () {
-      expect(Naira.fromNaira(2500000).format(), '₦2,500,000');
-      expect(Naira.fromNaira(1234).format(), '₦1,234');
-      expect(Naira.fromNaira(999).format(), '₦999');
-      expect(Naira.zero.format(), '₦0');
+      // A thin space follows the naira sign: its crossbars otherwise run
+      // into the first digit and the amount reads as struck through.
+      const n = Naira.naira;
+      expect(Naira.fromNaira(2500000).format(), '${n}2,500,000');
+      expect(Naira.fromNaira(1234).format(), '${n}1,234');
+      expect(Naira.fromNaira(999).format(), '${n}999');
+      expect(Naira.zero.format(), '${n}0');
+    });
+
+    test('the naira sign is followed by a thin space, not a plain one', () {
+      expect(Naira.naira, '₦\u2009');
+      expect(Naira.naira.contains(' '), isFalse,
+          reason: 'a normal space would look like a gap, not like kerning');
     });
 
     test('handles negatives', () {
-      expect(Naira.fromNaira(-1500).format(), '-₦1,500');
+      expect(Naira.fromNaira(-1500).format(), '-${Naira.naira}1,500');
     });
 
     test('arithmetic is exact', () {
@@ -49,7 +58,7 @@ void main() {
   group('Rate', () {
     test('costs energy correctly', () {
       final rate = Rate.fromNaira(225);
-      expect(rate.costOf(Kwh.fromDouble(10)).format(), '₦2,250');
+      expect(rate.costOf(Kwh.fromDouble(10)).format(), '${Naira.naira}2,250');
     });
 
     test('inverts to energy for a given spend', () {
@@ -63,7 +72,7 @@ void main() {
     });
 
     test('formats to two decimals', () {
-      expect(Rate.fromNaira(225.5).format(), '₦225.50/kWh');
+      expect(Rate.fromNaira(225.5).format(), '${Naira.naira}225.50/kWh');
     });
   });
 }

@@ -12,5 +12,11 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Grid's own channels. Registered after the generated plugins so a name
+    // collision would surface here rather than silently losing ours.
+    TextRecogniserPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "TextRecogniserPlugin")!
+    )
   }
 }

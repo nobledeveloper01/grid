@@ -28,12 +28,14 @@ abstract final class GridTheme {
       canvasColor: c.surface,
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: c.accent,
-        onPrimary: brightness == Brightness.light
-            ? const Color(0xFFFFFFFF)
-            : const Color(0xFF06120C),
+        primary: c.brand,
+        // Amber is too light to carry white text at 4.5:1. A warm near-black
+        // on amber is both legible and better-looking than the alternative.
+        onPrimary: c.onBrand,
         secondary: c.accent,
-        onSecondary: c.surface,
+        onSecondary: brightness == Brightness.light
+            ? const Color(0xFFFFFFFF)
+            : c.onBrand,
         error: c.danger,
         onError: const Color(0xFFFFFFFF),
         surface: c.surface,
@@ -55,31 +57,35 @@ abstract final class GridTheme {
       // Cards are delineated by outline and surfaceDim, not shadow. Flat
       // surfaces render faster on low-end GPUs — which is the second reason.
       cardTheme: CardThemeData(
-        color: c.surfaceDim,
+        color: c.surfaceRaised,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: c.accent,
-          minimumSize: const Size.fromHeight(Targets.outdoor),
+          backgroundColor: c.brand,
+          foregroundColor: c.onBrand,
+          disabledBackgroundColor: c.surfaceDim,
+          disabledForegroundColor: c.textTertiary,
+          minimumSize: const Size.fromHeight(Targets.control),
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle: type.bodyStrong,
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: c.textPrimary,
-          side: BorderSide(color: c.outline),
-          minimumSize: const Size.fromHeight(Targets.min),
+          side: BorderSide(color: c.outlineStrong, width: 1.5),
+          minimumSize: const Size.fromHeight(Targets.control),
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle: type.bodyStrong,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: c.accent,
+          foregroundColor: c.brandDeep,
           minimumSize: const Size(Targets.min, Targets.min),
           textStyle: type.bodyStrong,
         ),
@@ -101,7 +107,7 @@ abstract final class GridTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: Radii.smAll,
-          borderSide: BorderSide(color: c.accent, width: 2),
+          borderSide: BorderSide(color: c.brandDeep, width: 2),
         ),
         labelStyle: type.label.copyWith(color: c.textSecondary),
         hintStyle: type.body.copyWith(color: c.textTertiary),
