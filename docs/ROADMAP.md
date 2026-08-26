@@ -1,11 +1,16 @@
 # Roadmap
 
-Eight phases. Each has an **exit gate** that a machine checks — not a judgement call, not
+Twelve phases. Each has an **exit gate** that a machine checks — not a judgement call, not
 "looks done". A phase is finished when its gate is green in CI. The gates accumulate: every
 later phase must keep every earlier gate passing, which is what stops phase 6 from quietly
 opening an update path on a fact that phase 0 made immutable.
 
 `PHASE` holds the current number. `make phase` prints it and its gate.
+
+Phases 0–7 were planned before any code existed. Phase 3.5 and phases 8–10 come from
+`docs/FEATURE-BACKLOG.md`, sourced once phase 3 was measuring supply and it became clear how
+much was reachable from measurement already in hand. The backlog holds the reasoning; this
+file holds the commitment.
 
 ## Three things settled before phase 1, because they change what gets built
 
@@ -80,6 +85,12 @@ The wedge. A user goes from install to a depletion date without an account.
 - OCR failure never blocks: manual entry is always one tap away
 - The photograph is retained whether OCR succeeded or not
 
+**Carried.** The accuracy and latency gates cannot be measured on a simulator — there is no
+camera — so they are open against physical hardware while later phases proceed. The two
+gates that *can* be checked without a device are green: capture never blocks on OCR, and the
+photograph is retained on every path. Work moved to phase 3 rather than idling, and this
+line exists so that decision is visible rather than forgotten.
+
 ---
 
 ## Phase 3 — Supply and compliance
@@ -97,16 +108,51 @@ The wedge. A user goes from install to a depletion date without an account.
 
 ---
 
-## Phase 4 — Analytics and appliances
+## Phase 3.5 — Evidence at hand
+
+Four features that were not in the original plan and became nearly free the moment phase 3
+started measuring supply. Inserted rather than appended because each one strengthens the
+record *before* the analytics in phase 4 start drawing conclusions from it, and because
+F8's reading cadence is what phase 4's bill reconciliation depends on existing.
+
+**Deliverables**
+- **F1** Token vault: the STS token stored against its purchase, with load confirmation
+  inferred from the next reading
+- **F4** Band adherence: promised hours against measured hours, valued in naira, with
+  coverage on every figure
+- **F5** Vendor effective-rate watch, baselined on the user's own median rather than on the
+  gazetted tariff
+- **F8** Cycle-anchored reading reminders and a streak that counts cycles covered
+
+**Exit gate**
+- No band-adherence figure is reported for a period below the coverage floor —
+  `InsufficientCoverage` is returned instead, and a test asserts it
+- Token load confirmation never asserts `confirmed` without a subsequent reading that
+  supports it
+- Tokens are absent from every log sink and from any dispute pack the user did not opt into
+- The reminder is offered once, is declinable permanently, and never fires more than once
+  per cycle
+
+---
+
+## Phase 4 — Analytics, bills and budget
 
 **Deliverables**
 - Custom-painted chart library, scrubbable, with interpolation visibly distinguished
 - Trend, cost projection, appliance inventory, modelled load attribution, reconciliation
+- **F2** Bill capture and reconciliation: the DisCo's claimed reading against the user's own
+- **F3** Estimated-bill cap check for unmetered customers
+- **F7** Budget mode — the forecast reframed against the date money next arrives
 
 **Exit gate**
 - Charts sustain **60 fps** scrubbing on the reference low-end Android
 - Interpolated regions are visually distinct from measured points on every chart
 - The load model reconciles within 25% on internal test households
+- Bill reconciliation returns `Unreconcilable` rather than a divergence whenever the nearest
+  reading falls outside the tolerance window — asserted by test, because manufacturing a
+  divergence is the one failure this feature cannot survive
+- The cap basis and every regulatory citation in user-facing copy are verified against the
+  NERC order **currently in force**, with the verification date recorded in the tariff table
 
 ---
 
@@ -155,3 +201,63 @@ first person wrote.
 **Exit gate**
 - BLE degrades to manual entry on any unsupported controller
 - No individual location leaves the device at finer than LGA granularity
+
+---
+
+## Phase 8 — Household economics
+
+The grid is not the whole bill. This phase makes Grid answer the question households actually
+argue about — grid, generator or solar — using that household's own measured data rather than
+a vendor's assumption.
+
+**Deliverables**
+- **F9** Fuel purchases and generator run-log, with a naira-per-kWh for generated power set
+  beside the grid rate
+- **F10** Solar and battery sizing derived from measured consumption and the *longest*
+  measured outage, with payback computed against logged generator spend
+- **F12** Appliance coach: ranked attribution in naira, with a what-if on run-time
+
+**Exit gate**
+- Every figure derived from the load model renders in the `estimate` treatment — dashed,
+  tinted, labelled — with a widget test asserting it, since this is the phase where a
+  modelled number is most likely to be mistaken for a measured one
+- The sizing output states what it does not know, in the same view as the recommendation
+- Generator run-time is never inferred from charging state on a household with mains supply
+- Payback refuses to compute from fewer than 60 days of logged fuel spend
+
+---
+
+## Phase 9 — Many meters, many people
+
+**Deliverables**
+- **F6** Meter as a selectable entity, with a combined spend view across meters
+- **F11** Compound split: an explicit, versioned split rule and a shareable per-occupant
+  receipt carrying the meter photograph, the period, the rule and the share
+- **F13** Encrypted backup and restore to any platform file destination, with a versioned
+  archive format
+
+**Exit gate**
+- The allocation sum invariant holds under property-based testing — shares always sum to the
+  period total, exactly, to the naira. This is phase 6's gate, brought forward and proven
+  offline; phase 6 inherits the engine rather than reimplementing it
+- A receipt regenerated from a past period reproduces the rule in force at the time, not the
+  current one
+- Restore verifies every integrity hash and reports what failed rather than importing it
+- An archive written by the earliest released format version still restores
+
+---
+
+## Phase 10 — Reach
+
+**Deliverables**
+- **F14** Home-screen widget on both platforms; Live Activity on iOS during an outage
+- **F15** Nigerian Pidgin, Hausa, Yoruba and Igbo, translated by a person, plus a mode where
+  the figures carry the meaning and the words are support
+
+**Exit gate**
+- The capture flow completes end to end without reading a sentence — verified by a run with
+  all string resources replaced by a single glyph
+- Every screen renders in all five languages at 200% text scaling without truncation
+- The widget reads from shared storage and never blocks on the app process being alive
+- Regulatory and tariff terminology is reviewed by a native speaker per language, not
+  machine-translated

@@ -10,6 +10,67 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Supply inference, and fifteen features sourced
+
+**Phase 3.**
+
+### What we built
+
+- `SupplyMonitor`, a platform facade over charging state, with a Kotlin `BroadcastReceiver`
+  on Android and `UIDevice` battery notifications on iOS, plus a null implementation so the
+  domain never has to ask whether a monitor exists.
+- `SupplyInferenceEngine` — pure Dart, fifteen tests. A three-minute debounce, a forty-five
+  minute staleness limit, and a rule that a period the user entered by hand is never
+  overwritten by an inference.
+- `SupplyInferenceController`, which samples on resume as well as on event, because neither
+  platform will keep a process alive to watch a cable.
+- `docs/FEATURE-BACKLOG.md`: fifteen features with the problem, the shape, the dependency and
+  the cost, and five more that were considered and cut with the reason recorded. Phase 3.5
+  and phases 8 through 10 in `docs/ROADMAP.md` are where they became commitments.
+
+### What we decided
+
+- **Both platforms report `periodic`, never `continuous`.** iOS has no background execution
+  that fits this and Android will kill the process. Claiming continuous coverage would put a
+  number in a dispute pack that the operating system never promised, and the capability in
+  force is therefore recorded on every event so a log spanning a change reports honestly on
+  both sides of it.
+- **A transition closes at the moment the change was first seen, not when it was confirmed.**
+  The debounce exists to reject noise, not to move the timestamp. Charging the outage three
+  minutes late would have been a quiet, systematic, always-in-the-DisCo's-favour error.
+- **Inference is switched off entirely for a household on an inverter**, where charging state
+  no longer tracks the mains. Half a signal is worse here than none: a timeline built from it
+  would be fiction that looks like measurement.
+- **The phase 6 allocation invariant was pulled forward into phase 9.** The compound split
+  needs the same guarantee — shares summing to the total, exactly — and can prove it offline.
+  Phase 6 now inherits a tested engine rather than writing one against a server.
+
+### What surprised us
+
+- **Sourcing features surfaced how much phase 3 had already paid for.** Band adherence, the
+  strongest evidence Grid can produce, is subtraction over data the supply timeline already
+  holds. It was scoped at four days against features costing five and six. The measurement
+  was the expensive part and it was already done — which is an argument for building the
+  hard, unglamorous middle of a product before widening it, and one that is much easier to
+  make after the fact than before.
+- **Three of the five cuts were cut for the same reason**, and it was not cost. Neighbour
+  cross-check, meter self-audit and roster adherence all fail because they would have Grid
+  assert something it cannot actually stand behind — a fact it did not observe, a number the
+  load model knows is soft, a document nobody honours. The filter that did the most work was
+  not "is this valuable" but "can Grid defend this in front of somebody who disagrees".
+- **In-app vending was the easiest cut and the most tempting feature.** It is the obvious
+  revenue line, and it would quietly invalidate F5's effective-rate warnings, which only mean
+  anything because Grid takes no margin. Writing that reason down was worth more than the
+  decision itself.
+
+### Where we stopped
+
+- Phase 3's inference path is verified on the simulator and the tests are green at 209.
+- Phase 2's accuracy gate remains carried against physical hardware; the roadmap now says so
+  in the phase itself rather than only in this journal.
+- Next: the supply timeline screen and band compliance alerting, which close the rest of
+  phase 3's gate.
+
 ## 2026-08-26 — Splash screen, and a QA pass over every flow
 
 **Phase 2.** 2 commits. 7 files changed, 122 insertions(+), 23 deletions(-).
