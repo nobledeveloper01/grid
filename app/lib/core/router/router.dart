@@ -16,6 +16,7 @@ import '../../features/reading/presentation/reading_history_screen.dart';
 import '../../features/reading/presentation/purchase_entry_screen.dart';
 import '../../features/appliances/presentation/appliance_screen.dart';
 import '../../features/dispute/presentation/cases_screen.dart';
+import '../../features/economics/presentation/economics_screen.dart';
 import '../../features/dispute/presentation/dispute_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/dispute/presentation/pack_review_screen.dart';
@@ -39,6 +40,7 @@ abstract final class Routes {
   static const insights = '/insights';
   static const appliances = '/appliances';
   static const settings = '/settings';
+  static const economics = '/economics';
   static const cases = '/cases';
   static const dispute = '/dispute';
   static const disputeReview = '/dispute/review';
@@ -136,6 +138,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.appliances,
         builder: (context, state) => const ApplianceScreen(),
+      ),
+      GoRoute(
+        path: Routes.economics,
+        builder: (context, state) => const EconomicsScreen(),
       ),
       GoRoute(
         path: Routes.cases,

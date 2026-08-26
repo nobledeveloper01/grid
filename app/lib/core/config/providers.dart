@@ -106,6 +106,13 @@ final applianceRepositoryProvider = Provider<ApplianceRepository>(
   ),
 );
 
+final generatorRepositoryProvider = Provider<GeneratorRepository>(
+  (ref) => DriftGeneratorRepository(
+    ref.watch(databaseProvider),
+    ref.watch(hlcClockProvider),
+  ),
+);
+
 final disputeCaseRepositoryProvider = Provider<DisputeCaseRepository>(
   (ref) => DriftDisputeCaseRepository(
     ref.watch(databaseProvider),

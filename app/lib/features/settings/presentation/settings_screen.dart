@@ -176,6 +176,10 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.supplyTimeline),
               ),
               _LinkRow(
+                label: 'Running costs',
+                onTap: () => context.push(Routes.economics),
+              ),
+              _LinkRow(
                 label: 'Appliances',
                 onTap: () => context.push(Routes.appliances),
               ),

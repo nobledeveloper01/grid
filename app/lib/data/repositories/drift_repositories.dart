@@ -2,11 +2,13 @@ import 'package:drift/drift.dart';
 
 import '../../domain/entities/appliance.dart';
 import '../../domain/entities/dispute_case.dart';
+import '../../domain/entities/generator.dart';
 import '../../domain/entities/meter.dart';
 import '../../domain/entities/reading.dart';
 import '../../domain/entities/supply_event.dart';
 import '../../domain/repositories/repositories.dart';
 import '../../domain/services/escalation_engine.dart';
+import '../../domain/value_objects/units.dart';
 import '../local/database.dart';
 import '../local/hlc.dart';
 import '../local/mappers.dart';
@@ -359,6 +361,174 @@ class DriftDisputeCaseRepository implements DisputeCaseRepository {
         notes: r.notes,
         packPath: r.packPath,
         createdAt: DateTime.fromMillisecondsSinceEpoch(r.createdAt),
+      );
+}
+
+class DriftGeneratorRepository implements GeneratorRepository {
+  DriftGeneratorRepository(this._db, this._clock);
+
+  final GridDatabase _db;
+  final HlcClock _clock;
+
+  String _hlc() => _clock.issue(DateTime.now().millisecondsSinceEpoch).encode();
+
+  // --- the sets -------------------------------------------------------------
+
+  @override
+  Stream<List<Generator>> watchGenerators(String meterId) =>
+      (_db.select(_db.generators)..where((g) => g.meterId.equals(meterId)))
+          .watch()
+          .map((rows) => rows.map(_toGenerator).toList());
+
+  @override
+  Future<List<Generator>> getGenerators(String meterId) async {
+    final rows = await (_db.select(_db.generators)
+          ..where((g) => g.meterId.equals(meterId)))
+        .get();
+    return rows.map(_toGenerator).toList();
+  }
+
+  @override
+  Future<void> saveGenerator(Generator g) =>
+      _db.into(_db.generators).insertOnConflictUpdate(
+            GeneratorsCompanion.insert(
+              id: g.id,
+              meterId: g.meterId,
+              name: g.name,
+              ratedKva: g.ratedKva,
+              litresPerHour: g.litresPerHour,
+              fuel: Value(g.fuel.name),
+              hlc: _hlc(),
+            ),
+          );
+
+  @override
+  Future<void> removeGenerator(String id) =>
+      (_db.delete(_db.generators)..where((g) => g.id.equals(id))).go();
+
+  // --- fuel -----------------------------------------------------------------
+
+  @override
+  Stream<List<FuelPurchase>> watchFuel(String meterId) =>
+      (_db.select(_db.fuelPurchases)
+            ..where((f) => f.meterId.equals(meterId))
+            ..orderBy([(f) => OrderingTerm.desc(f.purchasedAt)]))
+          .watch()
+          .map((rows) => rows.map(_toFuel).toList());
+
+  @override
+  Future<List<FuelPurchase>> getFuel(String meterId) async {
+    final rows = await (_db.select(_db.fuelPurchases)
+          ..where((f) => f.meterId.equals(meterId))
+          ..orderBy([(f) => OrderingTerm.desc(f.purchasedAt)]))
+        .get();
+    return rows.map(_toFuel).toList();
+  }
+
+  /// Append only. A fuel purchase is a fact, so there is no update path here
+  /// and no delete — the same rule the readings live under.
+  @override
+  Future<void> addFuel(FuelPurchase p) =>
+      _db.into(_db.fuelPurchases).insert(
+            FuelPurchasesCompanion.insert(
+              id: p.id,
+              meterId: p.meterId,
+              generatorId: Value(p.generatorId),
+              litres: p.litres,
+              amountKobo: p.amount.kobo,
+              purchasedAt: p.purchasedAt.millisecondsSinceEpoch,
+              hlc: _hlc(),
+            ),
+          );
+
+  // --- runs -----------------------------------------------------------------
+
+  @override
+  Stream<List<GeneratorRun>> watchRuns(String meterId) =>
+      (_db.select(_db.generatorRuns)
+            ..where((r) => r.meterId.equals(meterId))
+            ..orderBy([(r) => OrderingTerm.desc(r.startedAt)]))
+          .watch()
+          .map((rows) => rows.map(_toRun).toList());
+
+  @override
+  Future<List<GeneratorRun>> getRuns(String meterId) async {
+    final rows = await (_db.select(_db.generatorRuns)
+          ..where((r) => r.meterId.equals(meterId))
+          ..orderBy([(r) => OrderingTerm.desc(r.startedAt)]))
+        .get();
+    return rows.map(_toRun).toList();
+  }
+
+  @override
+  Future<void> startRun(GeneratorRun run) =>
+      _db.into(_db.generatorRuns).insert(
+            GeneratorRunsCompanion.insert(
+              id: run.id,
+              meterId: run.meterId,
+              generatorId: Value(run.generatorId),
+              startedAt: run.startedAt.millisecondsSinceEpoch,
+              endedAt: Value(run.endedAt?.millisecondsSinceEpoch),
+              hlc: _hlc(),
+            ),
+          );
+
+  /// Closing a run writes an end time onto an open row rather than replacing
+  /// it — the guard on `endedAt` being null means a second tap on "stopped"
+  /// cannot shorten a run that was already closed.
+  @override
+  Future<void> endRun({required String id, required DateTime endedAt}) async {
+    await (_db.update(_db.generatorRuns)
+          ..where((r) => r.id.equals(id) & r.endedAt.isNull()))
+        .write(
+      GeneratorRunsCompanion(
+        endedAt: Value(endedAt.millisecondsSinceEpoch),
+        hlc: Value(_hlc()),
+      ),
+    );
+  }
+
+  @override
+  Future<GeneratorRun?> ongoingRun(String meterId) async {
+    final row = await (_db.select(_db.generatorRuns)
+          ..where((r) => r.meterId.equals(meterId) & r.endedAt.isNull())
+          ..orderBy([(r) => OrderingTerm.desc(r.startedAt)])
+          ..limit(1))
+        .getSingleOrNull();
+    return row == null ? null : _toRun(row);
+  }
+
+  // --- mapping --------------------------------------------------------------
+
+  Generator _toGenerator(GeneratorRow r) => Generator(
+        id: r.id,
+        meterId: r.meterId,
+        name: r.name,
+        ratedKva: r.ratedKva,
+        litresPerHour: r.litresPerHour,
+        fuel: FuelType.values.firstWhere(
+          (f) => f.name == r.fuel,
+          orElse: () => FuelType.petrol,
+        ),
+      );
+
+  FuelPurchase _toFuel(FuelPurchaseRow r) => FuelPurchase(
+        id: r.id,
+        meterId: r.meterId,
+        generatorId: r.generatorId,
+        litres: r.litres,
+        amount: Naira.fromKobo(r.amountKobo),
+        purchasedAt: DateTime.fromMillisecondsSinceEpoch(r.purchasedAt),
+      );
+
+  GeneratorRun _toRun(GeneratorRunRow r) => GeneratorRun(
+        id: r.id,
+        meterId: r.meterId,
+        generatorId: r.generatorId,
+        startedAt: DateTime.fromMillisecondsSinceEpoch(r.startedAt),
+        endedAt: r.endedAt == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(r.endedAt!),
       );
 }
 

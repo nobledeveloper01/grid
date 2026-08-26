@@ -294,4 +294,96 @@ void main() {
       expect(tomorrow.isUsable, isFalse);
     });
   });
+
+  group('longest outage', () {
+    const engine = ComplianceEngine();
+    final from = now.subtract(const Duration(days: 7));
+
+    double longest(List<SupplyEvent> events) => engine.longestOutageHours(
+          events: events,
+          windowStart: from,
+          windowEnd: now,
+        );
+
+    test('is the worst observed gap, not the average', () {
+      expect(
+        longest([
+          supply(
+            id: 'a',
+            state: SupplyState.unavailable,
+            from: now.subtract(const Duration(days: 5)),
+            to: now.subtract(const Duration(days: 5)).add(const Duration(hours: 4)),
+          ),
+          supply(
+            id: 'b',
+            state: SupplyState.unavailable,
+            from: now.subtract(const Duration(days: 3)),
+            to: now.subtract(const Duration(days: 3)).add(const Duration(hours: 14)),
+          ),
+        ]),
+        closeTo(14, 0.01),
+      );
+    });
+
+    test('ignores periods when the power was on', () {
+      expect(
+        longest([
+          supply(
+            id: 'on',
+            state: SupplyState.available,
+            from: now.subtract(const Duration(days: 2)),
+            to: now.subtract(const Duration(days: 1)),
+          ),
+        ]),
+        0,
+      );
+    });
+
+    test('ignores an outage still running', () {
+      // Its length is a fact about the clock, not about the grid.
+      expect(
+        longest([
+          supply(
+            id: 'open',
+            state: SupplyState.unavailable,
+            from: now.subtract(const Duration(days: 4)),
+          ),
+        ]),
+        0,
+      );
+    });
+
+    test('clips an outage that started before the window', () {
+      expect(
+        longest([
+          supply(
+            id: 'straddle',
+            state: SupplyState.unavailable,
+            from: from.subtract(const Duration(hours: 20)),
+            to: from.add(const Duration(hours: 3)),
+          ),
+        ]),
+        closeTo(3, 0.01),
+      );
+    });
+
+    test('ignores a superseded event', () {
+      final start = now.subtract(const Duration(days: 2));
+      expect(
+        longest([
+          SupplyEvent(
+            id: 'gone',
+            meterId: 'm1',
+            state: SupplyState.unavailable,
+            startedAt: start,
+            endedAt: start.add(const Duration(hours: 9)),
+            source: SupplySource.manual,
+            platformCapability: PlatformCapability.continuous,
+            supersededById: 'replacement',
+          ),
+        ]),
+        0,
+      );
+    });
+  });
 }

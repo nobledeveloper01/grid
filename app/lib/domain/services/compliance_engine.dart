@@ -213,6 +213,33 @@ class ComplianceEngine {
     );
   }
 
+  /// The longest continuous outage actually observed in a window.
+  ///
+  /// A battery is sized on this, not on the average — an average-sized bank is
+  /// flat precisely on the days the household bought it for. Only closed
+  /// `unavailable` periods count: an open one is still running and its length
+  /// is a fact about the clock rather than about the grid.
+  double longestOutageHours({
+    required List<SupplyEvent> events,
+    required DateTime windowStart,
+    required DateTime windowEnd,
+  }) {
+    var longest = 0.0;
+    for (final e in events) {
+      if (e.isSuperseded || e.state != SupplyState.unavailable) continue;
+      final end = e.endedAt;
+      if (end == null) continue;
+      if (end.isBefore(windowStart) || e.startedAt.isAfter(windowEnd)) {
+        continue;
+      }
+      final from = e.startedAt.isBefore(windowStart) ? windowStart : e.startedAt;
+      final to = end.isAfter(windowEnd) ? windowEnd : end;
+      final hours = to.difference(from).inMinutes / 60.0;
+      if (hours > longest) longest = hours;
+    }
+    return longest;
+  }
+
   /// Whether an alert may fire, given when one last did. Hysteresis exists
   /// so a supply figure hovering around the threshold does not produce a
   /// notification every day.

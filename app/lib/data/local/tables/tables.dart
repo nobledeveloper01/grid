@@ -214,6 +214,53 @@ class DisputeCases extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// A generator or inverter. **State** — it describes the household now.
+@DataClassName('GeneratorRow')
+class Generators extends Table {
+  TextColumn get id => text()();
+  TextColumn get meterId => text().references(Meters, #id)();
+  TextColumn get name => text()();
+  RealColumn get ratedKva => real()();
+  RealColumn get litresPerHour => real()();
+  TextColumn get fuel => text().withDefault(const Constant('petrol'))();
+  TextColumn get hlc => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Fuel bought. **A fact** — money left the household on a date, and the
+/// price per litre on that date is the fastest-moving figure in the product.
+@DataClassName('FuelPurchaseRow')
+class FuelPurchases extends Table {
+  TextColumn get id => text()();
+  TextColumn get meterId => text().references(Meters, #id)();
+  TextColumn get generatorId => text().nullable()();
+  RealColumn get litres => real()();
+  IntColumn get amountKobo => integer()();
+  IntColumn get purchasedAt => integer()();
+  TextColumn get hlc => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A period the generator ran. **A fact**, and recorded by hand on purpose:
+/// a household with both mains and a generator charges its phone from
+/// whichever is on, so charging state cannot tell the two apart.
+@DataClassName('GeneratorRunRow')
+class GeneratorRuns extends Table {
+  TextColumn get id => text()();
+  TextColumn get meterId => text().references(Meters, #id)();
+  TextColumn get generatorId => text().nullable()();
+  IntColumn get startedAt => integer()();
+  IntColumn get endedAt => integer().nullable()();
+  TextColumn get hlc => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class AppSettings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();

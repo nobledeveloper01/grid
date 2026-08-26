@@ -20,6 +20,9 @@ part 'database.g.dart';
     Appliances,
     BillingCycles,
     DisputeCases,
+    Generators,
+    FuelPurchases,
+    GeneratorRuns,
     OutboxEntries,
     AppSettings,
   ],
@@ -29,7 +32,7 @@ class GridDatabase extends _$GridDatabase {
       : super(executor ?? driftDatabase(name: 'grid'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +47,13 @@ class GridDatabase extends _$GridDatabase {
           // feature, not at build time.
           if (from < 2) {
             await m.createTable(disputeCases);
+          }
+          // 2 → 3 adds the generator side of the household: the set itself,
+          // the fuel bought for it, and the periods it ran.
+          if (from < 3) {
+            await m.createTable(generators);
+            await m.createTable(fuelPurchases);
+            await m.createTable(generatorRuns);
           }
           await _createIndices();
         },

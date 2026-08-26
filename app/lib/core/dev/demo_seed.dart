@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../../domain/entities/appliance.dart';
+import '../../domain/entities/generator.dart';
 import '../../domain/entities/meter.dart';
 import '../../domain/entities/reading.dart';
 import '../../domain/entities/supply_event.dart';
@@ -34,6 +35,7 @@ class DemoSeed {
     required this.purchases,
     required this.supply,
     required this.appliances,
+    required this.generators,
     required this.uuid,
   });
 
@@ -42,6 +44,7 @@ class DemoSeed {
   final PurchaseRepository purchases;
   final SupplyRepository supply;
   final ApplianceRepository appliances;
+  final GeneratorRepository generators;
   final String Function() uuid;
 
   static const bool enabled =
@@ -191,6 +194,48 @@ class DemoSeed {
         ratedWatts: watts,
         hoursPerDay: hours,
         quantity: count,
+      ));
+    }
+
+    // --- the generator side ----------------------------------------------
+    // A household that runs a 2.5 kVA set most evenings and buys fuel weekly,
+    // which is the shape the economics screen has to be judged against.
+    final generatorId = uuid();
+    await generators.saveGenerator(Generator(
+      id: generatorId,
+      meterId: meterId,
+      name: 'Backup set',
+      ratedKva: 2.5,
+      litresPerHour: 1.1,
+    ));
+
+    for (var d = 28; d >= 1; d--) {
+      // Not every night: a household runs the set when the outage is long
+      // enough to be worth the fuel.
+      if (d % 3 == 0) continue;
+      final day = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: d));
+      final start = day.add(Duration(hours: 18, minutes: rng.nextInt(60)));
+      final hours = 2 + rng.nextDouble() * 3;
+      await generators.startRun(GeneratorRun(
+        id: uuid(),
+        meterId: meterId,
+        generatorId: generatorId,
+        startedAt: start,
+        endedAt: start.add(Duration(minutes: (hours * 60).round())),
+      ));
+    }
+
+    for (var w = 4; w >= 0; w--) {
+      final litres = 10.0 + rng.nextInt(3) * 5;
+      await generators.addFuel(FuelPurchase(
+        id: uuid(),
+        meterId: meterId,
+        generatorId: generatorId,
+        litres: litres,
+        // Around 1,200 a litre, moving a little week to week the way it does.
+        amount: Naira.fromNaira(litres * (1150 + rng.nextInt(120))),
+        purchasedAt: now.subtract(Duration(days: w * 7 + 1)),
       ));
     }
 

@@ -1,5 +1,6 @@
 import '../entities/appliance.dart';
 import '../entities/dispute_case.dart';
+import '../entities/generator.dart';
 import '../entities/meter.dart';
 import '../entities/reading.dart';
 import '../entities/supply_event.dart';
@@ -67,6 +68,27 @@ abstract interface class DisputeCaseRepository {
   Future<List<DisputeCase>> getForMeter(String meterId);
   Future<void> save(DisputeCase c);
   Future<void> remove(String id);
+}
+
+/// The generator side of the household. One repository rather than three,
+/// because nothing ever wants the runs without the sets that produced them.
+abstract interface class GeneratorRepository {
+  Stream<List<Generator>> watchGenerators(String meterId);
+  Future<List<Generator>> getGenerators(String meterId);
+  Future<void> saveGenerator(Generator g);
+  Future<void> removeGenerator(String id);
+
+  Stream<List<FuelPurchase>> watchFuel(String meterId);
+  Future<List<FuelPurchase>> getFuel(String meterId);
+  Future<void> addFuel(FuelPurchase purchase);
+
+  Stream<List<GeneratorRun>> watchRuns(String meterId);
+  Future<List<GeneratorRun>> getRuns(String meterId);
+  Future<void> startRun(GeneratorRun run);
+  Future<void> endRun({required String id, required DateTime endedAt});
+
+  /// The run still going, if any. There is deliberately only ever one.
+  Future<GeneratorRun?> ongoingRun(String meterId);
 }
 
 abstract interface class SettingsRepository {

@@ -17,28 +17,74 @@
 #     were written, reviewed and shipped without ever being built, because the
 #     development machine had no Android SDK. That gap closes here.
 #
-# The tag is `stable`, which is a *moving* tag, and a floating toolchain turns
-# "the tests pass" into a statement with a shelf life. The upstream image does
-# not publish a tag for every Flutter release — `3.47.1` returns
-# `manifest unknown` — so the version is asserted instead of pinned: the build
-# fails loudly the day the tag moves past what this project was tested against,
-# rather than quietly compiling on a different SDK.
+# The base image is used for its **Android SDK**, not its Flutter. Upstream
+# publishes no tag for every Flutter release — `3.47.1` returns
+# `manifest unknown` — and its `stable` tag currently ships 3.44.0, which
+# cannot resolve this project's Dart constraint at all. So the Android
+# toolchain is inherited and Flutter is checked out at the exact tag the
+# project is developed against.
 #
-# Bumping is a one-line change here plus a run of the suite. Discovering the
-# drift from a mystery failure three weeks later is not.
-FROM ghcr.io/cirruslabs/flutter:stable AS base
+# The version is then *asserted* rather than trusted, because a base image can
+# move underneath a pinned checkout. The build fails loudly on drift rather
+# than quietly compiling on a different SDK — which is precisely what the first
+# run of this Dockerfile caught.
+# `--platform=linux/amd64` is not optional on an Apple Silicon host. Flutter
+# publishes no arm64 Linux SDK, so the arm64 variant of this image carries a
+# Flutter that upstream builds specially — currently 3.44 — while the official
+# tarball this file installs is x86_64 only. Mixing them fails at the dynamic
+# linker with `rosetta error: failed to open elf`, which reads like a corrupt
+# download and is not one. Pinning the platform keeps both halves x86_64 and
+# lets Rosetta do its job.
+FROM --platform=linux/amd64 ghcr.io/cirruslabs/flutter:stable AS base
 
-ARG EXPECTED_FLUTTER=3.47
+# The base image is here for its **Android SDK**, not its Flutter. Upstream
+# publishes no tag per Flutter release — `3.47.1` returns `manifest unknown` —
+# and its `stable` currently ships 3.44.0, whose Dart 3.12 cannot even resolve
+# this project's `^3.13.1` constraint.
+#
+# Checking the bundled SDK out at a tag does not work either: `flutter --version`
+# keeps reporting the version its cache was built for, so the checkout appears
+# to succeed and the toolchain does not move. The official tarball is
+# unambiguous, so that is what is installed, and the bundled one is left where
+# it is rather than half-replaced.
+# Deliberately NOT named FLUTTER_VERSION. The base image sets that as an ENV,
+# and an ENV beats an ARG default — so `ARG FLUTTER_VERSION=3.47.1` silently
+# resolved to the image's own 3.44.0, and the build downloaded, installed and
+# then "verified" the wrong SDK without a word about it.
+ARG GRID_FLUTTER=3.47.1
+
+RUN set -eux; \
+    curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${GRID_FLUTTER}-stable.tar.xz" \
+      | tar -xJ -C /opt; \
+    git config --global --add safe.directory /opt/flutter
+
+ENV FLUTTER_ROOT=/opt/flutter
+ENV PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
+
+# Asserted, not trusted. A base image can move under a pinned install, and the
+# first run of this file caught exactly that.
 RUN set -eu; \
     have="$(flutter --version | head -1 | awk '{print $2}')"; \
-    case "$have" in \
-      "$EXPECTED_FLUTTER"*) echo "Flutter $have — as expected" ;; \
-      *) echo "TOOLCHAIN DRIFT: image ships Flutter $have, this project was" >&2; \
-         echo "tested against ${EXPECTED_FLUTTER}.x. Run the suite, then bump" >&2; \
-         echo "EXPECTED_FLUTTER in the Dockerfile. Override for a one-off with" >&2; \
-         echo "  --build-arg EXPECTED_FLUTTER=$have" >&2; \
-         exit 1 ;; \
-    esac
+    if [ "$have" != "$GRID_FLUTTER" ]; then \
+      echo "TOOLCHAIN DRIFT: got Flutter $have, expected $GRID_FLUTTER" >&2; \
+      exit 1; \
+    fi; \
+    echo "Flutter $have — as expected"; \
+    flutter precache --android --no-ios --no-linux --no-windows --no-macos --no-web
+
+# The base image sets ANDROID_SDK_ROOT but not ANDROID_HOME, and the Gradle
+# plugin reads whichever it finds first — so `sdkmanager` installed platform 37
+# into one root during the build and Gradle then failed to find `android-37` in
+# the other. Both are set here, to the same place, and the platform is
+# pre-installed rather than fetched mid-build: a 16-minute failure that ends in
+# "target not found" seconds after "install complete" is a bad way to learn
+# that two variables disagreed.
+ENV ANDROID_HOME=$ANDROID_SDK_ROOT
+
+RUN set -eux; \
+    yes | sdkmanager --licenses > /dev/null 2>&1 || true; \
+    sdkmanager --install "platforms;android-37" "build-tools;37.0.0" > /dev/null; \
+    test -d "$ANDROID_SDK_ROOT/platforms/android-37"
 
 WORKDIR /app
 

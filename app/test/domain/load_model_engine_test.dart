@@ -161,4 +161,72 @@ void main() {
       expect(engine.normalisationFactor(m), 1);
     });
   });
+
+  group('the coach', () {
+    const engine = LoadModelEngine();
+    final rate = Rate.fromNaira(200);
+
+    LoadModel modelOf({Kwh? measured}) => engine.model(
+          appliances: [
+            appliance(id: 'a1', name: 'Air conditioner', watts: 1200,
+                hours: 6, quantity: 1),
+            appliance(id: 'a2', name: 'Fridge', watts: 150, hours: 24,
+                quantity: 1),
+          ],
+          supplyHoursPerDay: 24,
+          measuredDailyTotal: measured,
+        );
+
+    test('prices every appliance for a month', () {
+      final costs = engine.coach(model: modelOf(), rate: rate);
+      expect(costs, hasLength(2));
+      // AC: 1200 W * 6 h = 7.2 kWh a day, 216 a month, at 200 = 43,200.
+      final ac = costs.firstWhere((c) => c.appliance.name.startsWith('Air'));
+      expect(ac.monthlyCost.value, closeTo(43200, 50));
+    });
+
+    test('ranks the expensive one first, as the attribution does', () {
+      final costs = engine.coach(model: modelOf(), rate: rate);
+      expect(costs.first.appliance.name, 'Air conditioner');
+      expect(costs.first.monthlyCost > costs.last.monthlyCost, isTrue);
+    });
+
+    test('pegs the figures to the meter, not to the inventory', () {
+      // Modelled total is 10.8 kWh a day; the meter says 5.4. A coach that
+      // quotes savings off the model would promise twice what switching
+      // something off could actually deliver.
+      final measured = engine.coach(
+        model: modelOf(measured: Kwh.fromDouble(5.4)),
+        rate: rate,
+      );
+      final unmeasured = engine.coach(model: modelOf(), rate: rate);
+
+      expect(measured.first.normalisation, closeTo(0.5, 0.02));
+      expect(
+        measured.first.monthlyCost.kobo,
+        closeTo(unmeasured.first.monthlyCost.kobo * 0.5, 2000),
+      );
+    });
+
+    test('a what-if scales the saving by the hours given up', () {
+      final ac = engine.coach(model: modelOf(), rate: rate).first;
+      // Six hours down to four is a third of its running.
+      expect(
+        ac.savingFromRunningLess(2).kobo,
+        closeTo(ac.monthlyCost.kobo / 3, 200),
+      );
+    });
+
+    test('giving up more hours than it runs saves its cost, not more', () {
+      final ac = engine.coach(model: modelOf(), rate: rate).first;
+      expect(ac.savingFromRunningLess(50).kobo, ac.monthlyCost.kobo);
+      expect(ac.savingFromRunningLess(0).kobo, 0);
+    });
+
+    test('an empty inventory coaches nothing rather than dividing by zero',
+        () {
+      final empty = engine.model(appliances: const [], supplyHoursPerDay: 24);
+      expect(engine.coach(model: empty, rate: rate), isEmpty);
+    });
+  });
 }

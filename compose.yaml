@@ -1,22 +1,26 @@
 # Three jobs, none of which need Flutter installed on the host.
 #
-#   docker compose run --rm verify   analyze + the full test suite
-#   docker compose run --rm apk      writes build/grid-debug.apk to the host
-#   docker compose run --rm shell    a toolchain prompt for poking at things
+#   make docker-verify   analyze + the full test suite
+#   make docker-apk      writes build/grid-debug.apk to the host
+#   make docker-shell    a toolchain prompt for poking at things
 #
 # iOS is absent on purpose — see the note at the top of the Dockerfile.
+#
+# Nothing here bind-mounts the source. It is tempting, and it breaks the build:
+# generated sources (`*.g.dart`) are not committed, the image produces them
+# during its own build, and mounting the host directory over `/app` hides them
+# again. The failure is a wall of missing-symbol errors that look nothing like
+# a mounting problem.
 services:
+  # `docker compose build verify` is the whole check — analyze and the suite
+  # run as build steps, so a failure fails the build rather than printing to a
+  # log nobody reads.
   verify:
     build:
       context: .
       target: verify
-    # The image already ran both on build; this re-runs them against whatever
-    # is currently mounted, which is what you want while actually working.
-    volumes:
-      - ./app:/app
-      - pub-cache:/root/.pub-cache
     command: >
-      bash -lc "flutter analyze && flutter test"
+      bash -lc "echo 'analyze and tests passed during image build'"
 
   apk:
     build:
@@ -24,20 +28,12 @@ services:
       target: apk
     volumes:
       - ./build:/out
-      - pub-cache:/root/.pub-cache
     command: >
       bash -lc "cp build/app/outputs/flutter-apk/app-debug.apk /out/grid-debug.apk
-                && echo 'wrote build/grid-debug.apk'"
+                && ls -la /out/grid-debug.apk"
 
   shell:
     build:
       context: .
       target: base
-    volumes:
-      - ./app:/app
-      - pub-cache:/root/.pub-cache
     command: bash
-
-volumes:
-  # Survives between runs so a rebuild is not another full package resolve.
-  pub-cache:
