@@ -10,6 +10,53 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Camera capture, on-device OCR, and the amber redesign
+
+**Phase 2.** 1 commits. 28 files changed, 2092 insertions(+), 393 deletions(-).
+
+### What we built
+
+- Phase 2: the capture screen, the `TextRecogniser` façade with **Vision on iOS and ML Kit on
+  Android**, `DigitExtractor` in pure Dart (19 tests), photo storage with SHA-256, and the
+  confirm screen with per-character uncertainty marking.
+- A full visual redesign around energy amber, with bundled variable fonts and a moderated
+  type and control scale.
+
+### What we decided
+
+- **The native side recognises text and nothing else.** Choosing which digit run is the meter
+  register happens in Dart, so the judgement — the part with the actual product thinking in
+  it — is testable without a device and identical on both platforms. The native modules are
+  each under 150 lines and have no opinions.
+- **A reading the user retyped is a manual reading**, whatever the camera first suggested.
+  Recording it as OCR would inflate the accuracy figure that phase 2's exit gate depends on.
+
+### What surprised us
+
+- **The naira sign reads as a strikethrough.** ₦ is an N with two full-width crossbars, and
+  they run into the first digit: "₦209.60" renders as though struck out. It took four builds
+  to pin down because it looked exactly like a stray `TextDecoration` — the actual cause was
+  the glyph, reproducing at every size and in both Inter and the system font. A thin space
+  after the symbol fixes it. For a Nigerian money app this is not cosmetic: an amount that
+  looks struck out on a bill says the opposite of what it means.
+- **The fonts were never shipped.** `fontFamily: 'Inter'` had been in the theme since phase 0
+  and no font was ever bundled, so every screen quietly fell back to the system face. Nothing
+  warns about this — the app just renders, and looks fine, and is not using your typeface.
+- **`fontWeight` does nothing on a variable font.** Google Fonts publishes Inter and Roboto
+  Mono only as variable files now, and Flutter renders those at their default instance unless
+  `fontVariations` names the `wght` axis. Every weight came out identical and it read as a
+  font-loading problem rather than an axis problem.
+- **`printf '\-->\n'` fails** — `printf` reads the leading `--` as end-of-options. Second
+  shell bug this week caused by prose rather than logic.
+
+### Where we stopped
+
+- Phase 2 is built but **its accuracy gate cannot be closed here**: ≥95% on a well-lit
+  analogue test set needs photographs of real meters, and the iOS simulator has no camera.
+  The graceful path is verified — no camera lands on manual entry as the primary action, with
+  the photograph still retained on the paths that do capture.
+- Next: run the review, design-review and QA passes over what is now on screen.
+
 ## 2026-08-26 — The documentation pipeline
 
 **Phase 1.**

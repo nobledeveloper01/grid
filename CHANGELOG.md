@@ -11,6 +11,29 @@ line somebody will undo in six months.
 
 ### Added
 
+- **Camera capture and on-device OCR.** A full-bleed capture screen with a guide rect sized
+  to the register, torch control, and a 76 dp shutter — everything reachable by one thumb,
+  because this screen is used outdoors at night. Recognition runs on-device behind the
+  `TextRecogniser` façade: **Apple's Vision framework on iOS, ML Kit on Android** (ADR-0004).
+- **`DigitExtractor`, in pure Dart.** A meter face carries a serial number, a model number,
+  certification marks and a utility logo as well as the reading, so the register has to be
+  *chosen* rather than read. The extractor scores candidates on size relative to the face,
+  digit count against the meter type, and position — and a test proves it picks a small
+  centred register over a longer, more confident serial number.
+- **Uncertain digits are marked individually.** Characters the recogniser was least sure of
+  are underlined, so the user checks *those* rather than re-reading the whole number. Editing
+  any digit re-records the reading as manual, because a reading the user retyped is a manual
+  reading whatever the camera first suggested — recording it as OCR would overstate how well
+  recognition is working.
+- **Evidence photographs are stored with a SHA-256 hash**, in app-private storage and
+  referenced by path rather than held as a blob. The photograph is kept whether recognition
+  succeeded or not: the photograph *is* the evidence, and OCR is a convenience on top of it.
+- Camera permission is requested in context with the reason stated, and every failure path —
+  denied, absent, broken — lands on manual entry as the primary action rather than on an
+  error.
+
+### Changed
+
 - **The documentation pipeline.** `CLAUDE.md`, `DESIGN.md`, `PHASE`, `docs/ROADMAP.md`,
   `docs/JOURNAL.md` and eight ADRs, with `scripts/doc-check.sh` enforcing them in pre-commit
   and CI. The gate blocks on a malformed document and warns when code has changed since the

@@ -55,6 +55,7 @@ dependencies:
   printing: ^5.15.0
   share_plus: ^13.3.0
   permission_handler: ^13.0.1
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

@@ -8,6 +8,9 @@ import '../../features/onboarding/presentation/meter_type_screen.dart';
 import '../../features/onboarding/presentation/disco_screen.dart';
 import '../../features/onboarding/presentation/tariff_band_screen.dart';
 import '../../features/onboarding/presentation/first_value_screen.dart';
+import '../../features/reading/application/capture_controller.dart';
+import '../../features/reading/presentation/capture_screen.dart';
+import '../../features/reading/presentation/confirm_reading_screen.dart';
 import '../../features/reading/presentation/manual_entry_screen.dart';
 import '../../features/reading/presentation/reading_history_screen.dart';
 import '../../features/reading/presentation/purchase_entry_screen.dart';
@@ -21,6 +24,8 @@ abstract final class Routes {
   static const onboardingFirstValue = '/onboarding/first-value';
 
   static const home = '/';
+  static const capture = '/reading/capture';
+  static const confirmReading = '/reading/confirm';
   static const manualEntry = '/reading/manual';
   static const readingHistory = '/reading/history';
   static const purchaseEntry = '/reading/purchase';
@@ -86,6 +91,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const FirstValueScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: Routes.capture,
+        builder: (context, state) => const CaptureScreen(),
+      ),
+      GoRoute(
+        path: Routes.confirmReading,
+        builder: (context, state) =>
+            ConfirmReadingScreen(capture: state.extra! as CaptureResult),
       ),
       GoRoute(
         path: Routes.manualEntry,

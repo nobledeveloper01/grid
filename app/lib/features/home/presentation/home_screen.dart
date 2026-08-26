@@ -149,10 +149,22 @@ class HomeScreen extends ConsumerWidget {
         children: [
           Expanded(
             flex: 3,
-            child: FilledButton.icon(
-              onPressed: () => context.push(Routes.manualEntry),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Log reading'),
+            child: Consumer(
+              builder: (context, ref, _) {
+                // Route to the camera only where recognition actually works.
+                // Offering a camera button that falls straight through to
+                // manual entry is worse than not offering one.
+                final ocr = ref.watch(ocrAvailableProvider).value ?? false;
+                return FilledButton.icon(
+                  onPressed: () => context.push(
+                    ocr ? Routes.capture : Routes.manualEntry,
+                  ),
+                  icon: Icon(
+                    ocr ? Icons.camera_alt_rounded : Icons.add_rounded,
+                  ),
+                  label: const Text('Log reading'),
+                );
+              },
             ),
           ),
           if (meter.isPrepaid) ...[
