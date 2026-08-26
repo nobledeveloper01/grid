@@ -10,6 +10,79 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Phases 8, 9 and 6, a backend, and a README that shows the app
+
+**Phase 3, with 8 done, 9 part-done and 6 part-done alongside it.**
+
+### What we built
+
+- **Phase 8 — household economics.** `GeneratorEngine` (what a generated unit costs, and the
+  blend against grid), `SolarSizingEngine` (sized from measured consumption and the longest
+  measured outage), and the appliance coach on top of the load model. Three Drift tables, a
+  screen, and 33 tests.
+- **Phase 9 (part) — F11, the compound split.** `AllocationEngine` in Dart, four rules, a
+  per-occupant PDF receipt, and the exact-sum invariant under 300 randomised trials.
+- **Phase 6 (core) — a Go server in `server/`.** The allocation engine mirrored, statement
+  issue/list/revoke, capability links, and a tenant page that needs no account, no app and no
+  JavaScript. Plus the landlord side in the phone: server settings, a send button, and a
+  screen of links.
+- **A README in the house style**, sixteen screenshots, and `scripts/screenshot.sh`.
+- **Docker.** `--target verify` runs analyze and the full suite on a pinned Flutter. The APK
+  target does not work and the reason is written into the Dockerfile.
+
+### What we decided
+
+- **The server splits again rather than trusting the client.** Not because the landlord is
+  suspected of anything — because the server is what the tenant is shown, and arithmetic done
+  somewhere else cannot be checked by the person being asked to pay it. If the shares fail to
+  balance, nothing is issued at all.
+- **The whole split travels with each statement**, not only the reader's own figure. A tenant
+  who can see one number is being asked to trust the split; being able to check it against
+  everyone else's is the point.
+- **Allocation happens in whole naira.** See below — this was a decision forced by looking at
+  output rather than one taken in advance.
+- **Run-time is recorded by hand, not inferred.** A household with both mains and a generator
+  charges its phone from whichever is on, so charging state cannot tell them apart. Guesswork
+  dressed as measurement is the thing this product does not do.
+- **Solar payback is absent without logged fuel spend.** Inventing a fuel bill to produce a
+  payback figure is exactly the vendor behaviour the feature exists to replace.
+
+### What surprised us
+
+- **Exact shares that visibly did not add up.** The allocation was correct to the kobo — and
+  a ₦65,098 bill split three ways by rooms rendered as ₦39,058, ₦13,019 and ₦13,019, which
+  add to ₦65,096, directly beneath a line claiming they balanced. For a document whose only
+  purpose is to end an argument about arithmetic, it is hard to do worse. The kobo-level
+  invariant had been green in both languages the whole time; the defect lived entirely in the
+  gap between *correct* and *settleable*. Nobody pays eighty kobo. **Found by looking at a
+  rendered page, not by a test.**
+- **The two allocation engines formatted the same amount differently.** Go truncated where
+  Dart rounded. The cross-check test compared kobo, not strings, so it passed. A tenant would
+  have disputed a statement against their landlord's phone over a discrepancy we created.
+- **Auto-capitalisation broke a URL.** `TextCapitalization.sentences` on a generic prompt
+  sheet turned `http://` into `HTTP://`, which the normaliser did not recognise as a scheme —
+  producing `https://HTTP://host`. The same sheet would have capitalised an API key.
+- **The same content failed to render two different ways.** Appending the issued links to the
+  split screen grew a list the user was already scrolled inside, leaving them staring at
+  blank space; moving them to a bottom sheet produced a sheet with zero height, so a request
+  that had returned in seven milliseconds looked like a hang. Both are layout problems a full
+  route does not have, which is where they ended up.
+- **A Docker base image can set an ENV that silently beats your ARG.** `ARG FLUTTER_VERSION`
+  resolved to the image's own 3.44.0 rather than the 3.47.1 default, so the build downloaded,
+  installed and then "verified" the wrong SDK without a word. Renaming the argument fixed it.
+  The version assertion caught the drift on its first run, which is the only reason it was
+  noticed at all.
+
+### Where we stopped
+
+- 327 Dart tests, 98% coverage on the domain engines. Go: allocation and API suites green,
+  including phase 6's exit gate as a test.
+- Not built: phase 7 entirely (BLE and the outage map need hardware), phase 10 entirely (the
+  widget needs native targets, the languages need a translator), F6 multi-meter, F13 backup,
+  F1/F2/F3/F5, delta sync, and the Postgres adapter behind the store port.
+- Still open and gating release: the regulatory verification of the escalation ladder and the
+  tariff table.
+
 ## 2026-08-26 — Insights, dispute packs, cases, budget: the app end to end
 
 **Phase 3, and most of 3.5, 4 and 5.**
