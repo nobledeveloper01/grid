@@ -25,6 +25,7 @@ Future<String?> promptForText(
   String confirmLabel = 'Save',
   TextInputType? keyboardType,
   int maxLines = 1,
+  bool capitalise = true,
 }) {
   return showModalBottomSheet<String>(
     context: context,
@@ -41,6 +42,7 @@ Future<String?> promptForText(
       confirmLabel: confirmLabel,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      capitalise: capitalise,
     ),
   );
 }
@@ -54,6 +56,7 @@ class _TextPromptSheet extends StatefulWidget {
     required this.confirmLabel,
     required this.keyboardType,
     required this.maxLines,
+    required this.capitalise,
   });
 
   final String title;
@@ -63,6 +66,12 @@ class _TextPromptSheet extends StatefulWidget {
   final String confirmLabel;
   final TextInputType? keyboardType;
   final int maxLines;
+
+  /// Off for anything that is not prose. Sentence capitalisation turned a
+  /// typed server address into `HTTP://localhost:8099` — which the URL
+  /// normaliser did not recognise as already carrying a scheme, and which
+  /// would have silently corrupted an API key the same way.
+  final bool capitalise;
 
   @override
   State<_TextPromptSheet> createState() => _TextPromptSheetState();
@@ -108,7 +117,11 @@ class _TextPromptSheetState extends State<_TextPromptSheet> {
             autofocus: true,
             keyboardType: widget.keyboardType,
             maxLines: widget.maxLines,
-            textCapitalization: TextCapitalization.sentences,
+            textCapitalization: widget.capitalise
+                ? TextCapitalization.sentences
+                : TextCapitalization.none,
+            autocorrect: widget.capitalise,
+            enableSuggestions: widget.capitalise,
             decoration: InputDecoration(hintText: widget.hintText),
             onSubmitted: widget.maxLines == 1
                 ? (v) => Navigator.of(context).pop(v)

@@ -14,6 +14,7 @@ import '../../../shared/widgets/info_note.dart';
 import '../../../shared/widgets/text_prompt_sheet.dart';
 import '../../meter/application/meter_providers.dart';
 import '../../reminders/application/reminder_providers.dart';
+import '../../split/application/split_providers.dart';
 
 /// Everything about the meter that onboarding asked once and never again.
 ///
@@ -159,6 +160,12 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: Space.lg),
           _Group(
+            title: 'Sending statements',
+            children: const [_ServerRows()],
+          ),
+
+          const SizedBox(height: Space.lg),
+          _Group(
             title: 'Reminders',
             children: const [_ReminderRow()],
           ),
@@ -215,6 +222,56 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: Space.xxxl),
         ],
       ),
+    );
+  }
+}
+
+/// Where the landlord's server is, for sending tenants a link.
+///
+/// The only outbound network configuration in the whole application, and it is
+/// optional — a household with one meter never touches it.
+class _ServerRows extends ConsumerWidget {
+  const _ServerRows();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final t = context.type;
+    final url = ref.watch(serverUrlProvider).value;
+    final key = ref.watch(serverKeyProvider).value;
+    final settings = ref.read(settingsRepositoryProvider);
+
+    return Column(
+      children: [
+        _TextRow(
+          label: 'Server address',
+          value: url,
+          hint: 'https://grid.example.com',
+          keyboard: TextInputType.url,
+          capitalise: false,
+          onSaved: (v) => settings.set('server.url', v ?? ''),
+        ),
+        _TextRow(
+          label: 'Landlord key',
+          // Shown as a length, not as the secret. A settings screen is the
+          // most-screenshotted surface in any app.
+          value: (key == null || key.isEmpty)
+              ? null
+              : '•' * key.length.clamp(0, 12),
+          hint: 'From whoever runs the server',
+          capitalise: false,
+          onSaved: (v) => settings.set('server.key', v ?? ''),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: Space.md),
+          child: Text(
+            'Only used when you send tenants their share. Everything else in '
+            'Grid works with no connection at all, and nothing is uploaded '
+            'unless you press the button.',
+            style: t.caption.copyWith(color: c.textTertiary),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -337,6 +394,7 @@ class _TextRow extends StatelessWidget {
     required this.hint,
     required this.onSaved,
     this.keyboard,
+    this.capitalise = true,
   });
 
   final String label;
@@ -344,6 +402,9 @@ class _TextRow extends StatelessWidget {
   final String hint;
   final TextInputType? keyboard;
   final ValueChanged<String?> onSaved;
+
+  /// Off for addresses and keys — see the note in `promptForText`.
+  final bool capitalise;
 
   @override
   Widget build(BuildContext context) {
@@ -407,6 +468,7 @@ class _TextRow extends StatelessWidget {
       initialValue: value,
       hintText: hint,
       keyboardType: keyboard,
+      capitalise: capitalise,
     );
     if (result != null) onSaved(result.trim().isEmpty ? null : result.trim());
   }

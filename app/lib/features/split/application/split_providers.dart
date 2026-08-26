@@ -9,6 +9,7 @@ import '../../../domain/services/allocation_engine.dart';
 import '../../insights/application/insights_providers.dart';
 import '../../meter/application/meter_providers.dart';
 import '../data/receipt_renderer.dart';
+import '../data/statement_client.dart';
 
 final occupantsProvider =
     StreamProvider.family<List<Occupant>, String>((ref, meterId) {
@@ -113,4 +114,74 @@ final receiptFileProvider = FutureProvider.family<
     await File(path).writeAsBytes(bytes, flush: true);
     return (path: path, bytes: bytes);
   },
+);
+
+
+const _serverKey = 'server.url';
+const _apiKeyKey = 'server.key';
+
+/// Where the landlord's Grid server is, and the key to talk to it.
+///
+/// Both are state and both are optional: everything else in the app works with
+/// neither set, and a household with one meter never needs them. They exist so
+/// a landlord can send tenants a link, which is the only outbound call the
+/// application makes.
+final serverUrlProvider = StreamProvider<String?>((ref) {
+  return ref.watch(settingsRepositoryProvider).watch(_serverKey);
+});
+
+final serverKeyProvider = StreamProvider<String?>((ref) {
+  return ref.watch(settingsRepositoryProvider).watch(_apiKeyKey);
+});
+
+final serverConfiguredProvider = Provider<bool>((ref) {
+  final url = ref.watch(serverUrlProvider).value;
+  final key = ref.watch(serverKeyProvider).value;
+  return (url?.trim().isNotEmpty ?? false) && (key?.trim().isNotEmpty ?? false);
+});
+
+final statementClientProvider =
+    Provider<StatementClient>((ref) => const StatementClient());
+
+/// Statements issued in this session, so the landlord can send each link.
+///
+/// Deliberately not persisted. The links live on the server, which is the
+/// thing that can revoke them; a stale copy on the phone would let a landlord
+/// forward a link they had already killed.
+class IssuedStatements extends Notifier<List<IssuedStatement>> {
+  @override
+  List<IssuedStatement> build() => const [];
+
+  Future<void> issue(String meterId) async {
+    final allocation = ref.read(allocationProvider(meterId));
+    final occupants = ref.read(occupantsProvider(meterId)).value;
+    final meter = ref.read(selectedMeterProvider);
+    final url = ref.read(serverUrlProvider).value;
+    final key = ref.read(serverKeyProvider).value;
+
+    if (allocation == null || occupants == null || meter == null) {
+      throw const StatementError('There is nothing to send yet.');
+    }
+    if (url == null || key == null || url.isEmpty || key.isEmpty) {
+      throw const StatementError(
+        'Set your server address and key in Settings first.',
+      );
+    }
+
+    state = await ref.read(statementClientProvider).issue(
+          baseUrl: url,
+          apiKey: key,
+          meterNumber: meter.meterNumber ?? meter.label,
+          disco: meter.disco.label,
+          allocation: allocation,
+          occupants: occupants,
+        );
+  }
+
+  void clear() => state = const [];
+}
+
+final issuedStatementsProvider =
+    NotifierProvider<IssuedStatements, List<IssuedStatement>>(
+  IssuedStatements.new,
 );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../../../core/router/router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/theme/tokens.dart';
@@ -11,6 +14,7 @@ import '../../../shared/widgets/info_note.dart';
 import '../../../shared/widgets/text_prompt_sheet.dart';
 import '../../meter/application/meter_providers.dart';
 import '../application/split_providers.dart';
+import '../data/statement_client.dart';
 
 /// One meter, several households, and arithmetic everybody can see.
 ///
@@ -65,8 +69,11 @@ class SplitScreen extends ConsumerWidget {
                 message: 'Grid needs a couple of readings before it can put a '
                     'figure on anybody’s share.',
               )
-            else
+            else ...[
               _Shares(allocation: allocation, meterId: meter.id),
+              const SizedBox(height: Space.md),
+              _SendStatements(meterId: meter.id),
+            ],
           ],
 
           const SizedBox(height: Space.lg),
@@ -101,6 +108,79 @@ class SplitScreen extends ConsumerWidget {
         label: const Text('Add a household'),
       ),
     );
+  }
+}
+
+/// Send each household a link they can open with nothing.
+///
+/// The one outbound call in the application, and it happens because somebody
+/// pressed this. The receipt PDF above works with no connection at all; this
+/// is for the tenant who would rather have a page than a file.
+class _SendStatements extends ConsumerStatefulWidget {
+  const _SendStatements({required this.meterId});
+
+  final String meterId;
+
+  @override
+  ConsumerState<_SendStatements> createState() => _SendStatementsState();
+}
+
+class _SendStatementsState extends ConsumerState<_SendStatements> {
+  bool _busy = false;
+  String? _error;
+
+  @override
+  Widget build(BuildContext context) {
+    final configured = ref.watch(serverConfiguredProvider);
+
+    if (!configured) {
+      return const InfoNote(
+        icon: Icons.link_outlined,
+        message: 'You can also send each household a link they open in a '
+            'browser — no app, no account. Add your server address in '
+            'Settings to turn that on.',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: Targets.control,
+          child: OutlinedButton.icon(
+            onPressed: _busy ? null : _send,
+            icon: const Icon(Icons.send_rounded, size: 18),
+            label: Text(_busy ? 'Sending…' : 'Send each household a link'),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: Space.sm),
+          InfoNote(tone: NoteTone.warning, message: _error!),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _send() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(issuedStatementsProvider.notifier).issue(widget.meterId);
+      if (!mounted) return;
+      // A screen of its own, not more rows on this one and not a sheet.
+      // Growing this list under the user left them looking at whatever the
+      // old scroll offset then pointed at — a blank screen, the first time —
+      // and a bottom sheet came up with zero height. A route has no such
+      // ambiguity, and back navigation comes free.
+      context.push(Routes.splitLinks);
+    } on StatementError catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 }
 

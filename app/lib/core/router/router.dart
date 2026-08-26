@@ -17,6 +17,7 @@ import '../../features/reading/presentation/purchase_entry_screen.dart';
 import '../../features/appliances/presentation/appliance_screen.dart';
 import '../../features/dispute/presentation/cases_screen.dart';
 import '../../features/economics/presentation/economics_screen.dart';
+import '../../features/split/presentation/links_screen.dart';
 import '../../features/split/presentation/split_screen.dart';
 import '../../features/dispute/presentation/dispute_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -43,6 +44,7 @@ abstract final class Routes {
   static const settings = '/settings';
   static const economics = '/economics';
   static const split = '/split';
+  static const splitLinks = '/split/links';
   static const cases = '/cases';
   static const dispute = '/dispute';
   static const disputeReview = '/dispute/review';
@@ -148,6 +150,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.split,
         builder: (context, state) => const SplitScreen(),
+        routes: [
+          GoRoute(
+            path: 'links',
+            builder: (context, state) => const SplitLinksScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.cases,
