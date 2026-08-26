@@ -44,6 +44,7 @@ class GridColors extends ThemeExtension<GridColors> {
     required this.supplyOnSoft,
     required this.supplyOff,
     required this.supplyUnknown,
+    required this.track,
     required this.warning,
     required this.warningSoft,
     required this.danger,
@@ -102,6 +103,15 @@ class GridColors extends ThemeExtension<GridColors> {
   /// here and must never read as an error.
   final Color supplyUnknown;
 
+  /// The unfilled part of a bar or meter.
+  ///
+  /// Distinct from [surfaceDim]: a track has to stay visible against the
+  /// page, because the *height* of a bar is what carries the data when
+  /// colour cannot — in greyscale, in sunlight, or for a colour-blind
+  /// viewer. `surfaceDim` on a dark surface is nearly invisible and loses
+  /// that second channel.
+  final Color track;
+
   final Color warning;
   final Color warningSoft;
   final Color danger;
@@ -138,6 +148,7 @@ class GridColors extends ThemeExtension<GridColors> {
     supplyOnSoft: Color(0xFFDFF3E9),
     supplyOff: Color(0xFF7E1A13),
     supplyUnknown: Color(0xFFBDB6A8),
+    track: Color(0xFFEDE9E1),
     warning: Color(0xFF9A5B00),
     warningSoft: Color(0xFFFFF3DC),
     danger: Color(0xFFB3261E),
@@ -172,6 +183,7 @@ class GridColors extends ThemeExtension<GridColors> {
     supplyOnSoft: Color(0xFF10291E),
     supplyOff: Color(0xFFC4544A),
     supplyUnknown: Color(0xFF3E382E),
+    track: Color(0xFF2C2721),
     warning: Color(0xFFE8B057),
     warningSoft: Color(0xFF2E2211),
     danger: Color(0xFFE8695E),
@@ -204,6 +216,7 @@ class GridColors extends ThemeExtension<GridColors> {
     Color? supplyOnSoft,
     Color? supplyOff,
     Color? supplyUnknown,
+    Color? track,
     Color? warning,
     Color? warningSoft,
     Color? danger,
@@ -234,6 +247,7 @@ class GridColors extends ThemeExtension<GridColors> {
       supplyOnSoft: supplyOnSoft ?? this.supplyOnSoft,
       supplyOff: supplyOff ?? this.supplyOff,
       supplyUnknown: supplyUnknown ?? this.supplyUnknown,
+      track: track ?? this.track,
       warning: warning ?? this.warning,
       warningSoft: warningSoft ?? this.warningSoft,
       danger: danger ?? this.danger,
@@ -270,6 +284,7 @@ class GridColors extends ThemeExtension<GridColors> {
       supplyOnSoft: l(supplyOnSoft, other.supplyOnSoft),
       supplyOff: l(supplyOff, other.supplyOff),
       supplyUnknown: l(supplyUnknown, other.supplyUnknown),
+      track: l(track, other.track),
       warning: l(warning, other.warning),
       warningSoft: l(warningSoft, other.warningSoft),
       danger: l(danger, other.danger),

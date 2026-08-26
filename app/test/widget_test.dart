@@ -144,6 +144,15 @@ void main() {
       }
     });
 
+    test('bar tracks stay visible against the page in both themes', () {
+      // The height of a bar is what carries the data when colour cannot —
+      // in greyscale, in sunlight, or for a colour-blind viewer. A track
+      // that vanishes into the background loses that second channel.
+      for (final c in [GridColors.light, GridColors.dark]) {
+        expect(contrastRatio(c.track, c.surface), greaterThanOrEqualTo(1.15));
+      }
+    });
+
     test('supply on and off separate in lightness, not only in hue', () {
       // Green and red at matching luminance vanish into each other in
       // greyscale and for a red-green colour-blind viewer. The palette

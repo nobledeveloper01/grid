@@ -118,7 +118,7 @@ class _Bar extends StatelessWidget {
             height: maxHeight,
             alignment: Alignment.bottomCenter,
             decoration: BoxDecoration(
-              color: c.surfaceDim,
+              color: c.track,
               borderRadius: Radii.smAll,
             ),
             child: TweenAnimationBuilder<double>(
