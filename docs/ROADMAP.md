@@ -102,9 +102,16 @@ line exists so that decision is visible rather than forgotten.
 - Band compliance alerts with hysteresis
 
 **Exit gate**
-- Coverage is measured and reported honestly on both platforms; no gap is interpolated
-- Compliance alerting verified against synthetic supply datasets
-- Alert cooldown holds — no alert fires twice inside 14 days for one meter
+- Coverage is measured and reported honestly on both platforms; no gap is interpolated ✅
+- Compliance alerting verified against synthetic supply datasets ✅
+- Alert cooldown holds — no alert fires twice inside 14 days for one meter ✅
+
+**Green, with the alerting scope stated.** "Alert" here means the in-app banner, which is a
+status and carries no cooldown, plus a best-effort local notification which does. Nothing in
+this product can reach a user who is not opening it: there is no server and neither platform
+grants the background execution that would be needed. ADR-0010 sets out why, what was
+rejected, and what phase 6 makes possible. The gap is real and it is left open rather than
+papered over with a notification fired from an assumption.
 
 ---
 
@@ -119,10 +126,11 @@ F8's reading cadence is what phase 4's bill reconciliation depends on existing.
 - **F1** Token vault: the STS token stored against its purchase, with load confirmation
   inferred from the next reading
 - **F4** Band adherence: promised hours against measured hours, valued in naira, with
-  coverage on every figure
+  coverage on every figure ✅
 - **F5** Vendor effective-rate watch, baselined on the user's own median rather than on the
   gazetted tariff
-- **F8** Cycle-anchored reading reminders and a streak that counts cycles covered
+- **F8** Cycle-anchored reading reminders ✅ — the streak that counts cycles covered is not
+  built yet
 
 **Exit gate**
 - No band-adherence figure is reported for a period below the coverage floor —
@@ -138,11 +146,11 @@ F8's reading cadence is what phase 4's bill reconciliation depends on existing.
 ## Phase 4 — Analytics, bills and budget
 
 **Deliverables**
-- Custom-painted chart library, scrubbable, with interpolation visibly distinguished
-- Trend, cost projection, appliance inventory, modelled load attribution, reconciliation
+- Custom-painted chart library, scrubbable, with interpolation visibly distinguished ✅
+- Trend, cost projection, appliance inventory, modelled load attribution, reconciliation ✅
 - **F2** Bill capture and reconciliation: the DisCo's claimed reading against the user's own
 - **F3** Estimated-bill cap check for unmetered customers
-- **F7** Budget mode — the forecast reframed against the date money next arrives
+- **F7** Budget mode — the forecast reframed against the date money next arrives ✅
 
 **Exit gate**
 - Charts sustain **60 fps** scrubbing on the reference low-end Android
@@ -165,10 +173,16 @@ The destination. Everything before this exists to make this credible.
 - Escalation ladder with elapsed-day tracking; case status
 
 **Exit gate**
-- A 12-month pack generates in **< 3000 ms**, entirely offline
-- Flagged readings are either excluded or shown flagged — never silently included as clean
-- The pack states its own coverage honestly
-- No pack generates from fewer than 14 days of data
+- A 12-month pack generates in **< 3000 ms**, entirely offline ✅ — about 200 ms, asserted by
+  `test/dispute_pack_performance_test.dart`, which prints the figure on every run so a pack
+  creeping towards the limit is visible rather than silently inside it
+- Flagged readings are either excluded or shown flagged — never silently included as clean ✅
+- The pack states its own coverage honestly ✅
+- No pack generates from fewer than 14 days of data ✅
+- The escalation ladder's steps and waiting periods are verified against the customer-
+  complaints procedure currently in force — **still open**, and it gates release rather than
+  the phase: Grid citing a superseded procedure in a letter to a DisCo would damage the
+  user's case, which is the one thing this product exists not to do
 
 **v1.0 ships here.**
 

@@ -20,6 +20,7 @@ import '../../../shared/charts/trend_chart.dart';
 import '../../budget/presentation/budget_card.dart';
 import '../../dispute/application/dispute_providers.dart';
 import '../../insights/application/insights_providers.dart';
+import '../../reminders/application/reminder_providers.dart';
 import '../widgets/hero_card.dart';
 import '../widgets/section_header.dart';
 
@@ -48,6 +49,10 @@ class HomeScreen extends ConsumerWidget {
     // an inference, it is debounced, and it stops entirely for a user who
     // told us they are on an inverter.
     ref.watch(supplyInferenceProvider);
+
+    // A band-shortfall alert, at most once per cooldown. The hysteresis is
+    // in the engine; this is only the thing that calls it.
+    ref.watch(complianceAlertProvider(meter.id));
 
     return GridScaffold(
       showBack: false,
@@ -134,6 +139,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
 
                 _OpenCases(meterId: meter.id),
+                const _ReminderOffer(),
 
                 const SizedBox(height: Space.xl),
                 SectionHeader(
@@ -216,6 +222,54 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The one time Grid asks about reminders.
+///
+/// After the second reading, so the user has done the thing twice and can
+/// see what it is for. Either answer is final — an app that asks again next
+/// week has not taken the first one seriously.
+class _ReminderOffer extends ConsumerWidget {
+  const _ReminderOffer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(shouldOfferReminderProvider)) {
+      return const SizedBox.shrink();
+    }
+    final controller = ref.read(reminderControllerProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.xl),
+      child: InfoNote(
+        icon: Icons.notifications_none_rounded,
+        message: 'A reading near the same date each month is what lets Grid '
+            'check a bill against your meter. Want a monthly reminder?',
+        actions: [
+          OutlinedButton(
+            onPressed: controller.declineOffer,
+            child: const Text('No thanks'),
+          ),
+          FilledButton.tonal(
+            onPressed: () async {
+              final granted =
+                  await controller.enable(dayOfMonth: DateTime.now().day);
+              if (!granted && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Notifications are off for Grid in your phone settings.',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Yes, remind me'),
+          ),
         ],
       ),
     );

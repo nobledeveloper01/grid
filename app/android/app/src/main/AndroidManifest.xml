@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Android 13+ requires this to be granted at runtime; Grid asks for it
+         at the moment it offers the reminder, not on first launch. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- The meter is read by camera; a flash is not required to install. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />

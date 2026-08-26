@@ -12,6 +12,7 @@ import '../../../domain/value_objects/units.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
 import '../../meter/application/meter_providers.dart';
+import '../../reminders/application/reminder_providers.dart';
 
 /// Everything about the meter that onboarding asked once and never again.
 ///
@@ -157,6 +158,12 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: Space.lg),
           _Group(
+            title: 'Reminders',
+            children: const [_ReminderRow()],
+          ),
+
+          const SizedBox(height: Space.lg),
+          _Group(
             title: 'Your record',
             children: [
               _LinkRow(
@@ -200,6 +207,71 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+/// A monthly nudge to read the meter.
+///
+/// Anchored to a day of the month rather than to an interval, because a
+/// reading taken near the same date each cycle is what makes bill
+/// reconciliation possible at all. An interval drifts; a date does not.
+class _ReminderRow extends ConsumerWidget {
+  const _ReminderRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final t = context.type;
+    final on = ref.watch(reminderOnProvider).value ?? false;
+    final day = ref.watch(reminderDayProvider).value ?? 1;
+    final controller = ref.read(reminderControllerProvider.notifier);
+
+    return Column(
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: on,
+          title: Text(
+            'Monthly reading reminder',
+            style: t.body.copyWith(color: c.textPrimary),
+          ),
+          subtitle: Text(
+            'Readings taken near the same date each cycle are what let Grid '
+            'check a bill against your meter. Scattered ones cannot.',
+            style: t.caption.copyWith(color: c.textTertiary),
+          ),
+          onChanged: (v) async {
+            if (!v) {
+              await controller.disable();
+              return;
+            }
+            final granted = await controller.enable(dayOfMonth: day);
+            if (!granted && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Notifications are off for Grid in your phone settings.',
+                  ),
+                ),
+              );
+            }
+          },
+        ),
+        if (on)
+          _PickerRow<int>(
+            label: 'Remind me on the',
+            value: day,
+            options: List.generate(28, (i) => i + 1),
+            nameOf: (d) => '\$d${_suffix(d)} of the month',
+            onChanged: (d) => controller.enable(dayOfMonth: d),
+          ),
+      ],
+    );
+  }
+
+  static String _suffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    return switch (day % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', _ => 'th' };
   }
 }
 

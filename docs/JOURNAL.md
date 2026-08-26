@@ -10,6 +10,87 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Insights, dispute packs, cases, budget: the app end to end
+
+**Phase 3, and most of 3.5, 4 and 5.**
+
+### What we built
+
+- **Band adherence (F4)** — measured hours against the band's promise, valued in naira over
+  the energy used in the same window. Three results, all rendered, including the one that
+  says there is not enough measurement to make a claim.
+- **A demo dataset** behind `--dart-define=GRID_DEMO=true`: ninety days of readings, forty of
+  supply, an appliance inventory and one deliberately anomalous reading. It refuses to run
+  against a database that already holds a meter and is compiled out of release builds.
+- **Insights** — a hand-painted, scrubbable trend chart, the appliance inventory, and
+  modelled load attribution with its reconciliation against the meter shown either way.
+- **Dispute packs** — four templates, a pure-Dart assembly engine, and a PDF renderer that
+  adds no figures of its own. Plus the escalation ladder, case tracking with the clock
+  running, and a settings screen.
+- **Budget mode (F7)** and **cycle reminders (F8)**.
+
+### What we decided
+
+- **The trend plots reading intervals, not days.** A per-day series looked like a richer
+  chart and was a worse one: readings come four to six days apart, so every daily figure is
+  apportioned, the whole line rendered as estimated, and a signal that is always on stopped
+  being a signal. One point per interval is what was actually measured.
+- **The supply log rolls up by period length**, and a rolled-up pack names its ten worst
+  observed days separately — because a monthly average hides the days a complaint is actually
+  about.
+- **An unobserved day is excluded from a rolled-up mean, never counted as zero hours.**
+  Counting it as zero would manufacture an outage. It would also flatter the user's own case,
+  which is precisely why the rule needs writing down rather than leaving to judgement.
+- **A case opens when a pack is shared, not when it is previewed.** A preview is somebody
+  checking their own work, and a case list full of drafts is a case list nobody trusts.
+- **The in-app banner is the alert** (ADR-0010). There is no server and no background
+  execution, so nothing here can reach a user who is not opening the app. Saying so was
+  better than scheduling a notification that fires from an assumption.
+
+### What surprised us
+
+- **The same windowing bug shipped twice in one morning.** `ConsumptionEngine.series` took a
+  `windowStart` and applied it only to the coverage figure, so `total` silently described the
+  whole history. It produced a band-shortfall valuation three times too large, and then a
+  "used in 30 days" figure that reported ninety. Neither looked wrong. They were just large,
+  and a large number on a screen about overcharging is exactly the number nobody
+  double-takes at. The fix had to go in the engine — clipping intervals to the window with
+  straddling ones apportioned — because two call sites had already made the same mistake and
+  a third would have.
+- **The home screen's biggest number meant nothing at all.** `ForecastEngine.cost` projected
+  only the days still to come; the card labelled it "Bill so far this month". So the largest
+  figure in the app was neither what had been spent nor what the bill would be. It had been
+  there since phase 1, through a design review and a QA pass, because it was plausible.
+  Plausible is the property that gets a wrong number past review.
+- **A twelve-month dispute pack could not be generated at all**, and twelve months is exactly
+  the period a serious dispute uses. Three hundred and sixty-five daily rows sat inside a
+  `pw.Column`, which cannot be split across pages, so the PDF engine added pages until it
+  gave up. Raising the page limit to 200 did not help — it is not a limit problem, it is a
+  layout one. Sections had to become top-level children the layout can break.
+- **Today was being scored against twenty-four hours it had not had yet.** At 03:00 a
+  perfectly observed morning reported 12% coverage and rendered as "No data". That is a
+  cosmetic bug on the surface and a serious one underneath: it dragged the window average
+  down far enough to threaten the coverage floor that decides whether a case may be stated
+  at all.
+- **A flagged reading could still be included as clean.** Not every flag disqualifies a
+  reading, and the ones that do not were being presented as unremarkable — which is precisely
+  what the phase 5 gate forbids. The test that caught it was a loop over every `ReadingFlag`
+  value, written to raise coverage. Three of them failed, and the reason was a real hole in
+  the product rather than a gap in the tests.
+- **The naira sign kept causing trouble in a new way.** The thin space that stops its
+  crossbars running into the first digit is a *breaking* space, so a wrapped line in the PDF
+  printed the sign at the end of one line and the amount at the start of the next. U+202F
+  kerns identically and does not break.
+
+### Where we stopped
+
+- 265 tests, 98% coverage on the domain engines, all gates green.
+- Phase 3's exit gate is met with its scope stated (ADR-0010). Phase 2's accuracy gate is
+  still carried against physical hardware. Phase 5's regulatory verification is open and
+  gates release.
+- Not built: F1 token vault, F5 vendor watch, F2 bill capture, F3 cap check, and the reading
+  streak. The roadmap says so rather than implying otherwise.
+
 ## 2026-08-26 — Supply inference, and fifteen features sourced
 
 **Phase 3.**
