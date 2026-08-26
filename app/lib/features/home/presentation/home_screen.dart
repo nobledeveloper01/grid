@@ -9,6 +9,8 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../domain/value_objects/enums.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
+import '../../../domain/value_objects/units.dart';
+import '../../../shared/widgets/figure.dart';
 import '../../../shared/widgets/info_note.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../../shared/widgets/supply_strip.dart';
@@ -133,7 +135,7 @@ class HomeScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: Space.sm),
                       child: _ReadingRow(
-                        value: r.value.format(),
+                        value: r.value.formatValue(),
                         when: relativeTime(r.readAt, now: now),
                         isFlagged: r.excludedFromBaseline,
                         source: r.source,
@@ -357,7 +359,7 @@ class _ReadingRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: t.figure),
+                  Figure(value: value, unit: Kwh.unit),
                   Text(
                     when,
                     style: t.caption.copyWith(color: c.textSecondary),

@@ -29,6 +29,20 @@ extension type const Kwh._(int milli) implements Object {
   bool get isZero => milli == 0;
   Kwh get abs => Kwh._(milli.abs());
 
+  /// The number alone, without the unit.
+  ///
+  /// The unit belongs in the sans face: a monospace "kWh" sits on three
+  /// tabular advance widths and opens a gap that reads as a typo. Callers
+  /// that render a figure pair this with [unit] in `caption` style.
+  String formatValue() {
+    final deci = (milli / 100).round();
+    final whole = deci ~/ 10;
+    final fraction = (deci % 10).abs();
+    return '$whole.$fraction';
+  }
+
+  static const String unit = 'kWh';
+
   /// Always one decimal place, per the copy guidelines.
   ///
   /// Rounds in integer space rather than via [double.toStringAsFixed], which

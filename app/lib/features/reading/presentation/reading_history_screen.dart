@@ -6,6 +6,8 @@ import '../../../core/theme/theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../domain/value_objects/enums.dart';
+import '../../../domain/value_objects/units.dart';
+import '../../../shared/widgets/figure.dart';
 import '../../../shared/widgets/grid_scaffold.dart';
 import '../../../shared/widgets/info_note.dart';
 import '../../meter/application/meter_providers.dart';
@@ -69,17 +71,18 @@ class ReadingHistoryScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        r.value.format(),
-                        style: t.figure.copyWith(
-                          color: r.isSuperseded
-                              ? c.textTertiary
-                              : c.textPrimary,
-                          decoration: r.isSuperseded
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
+                      child: r.isSuperseded
+                          ? Text(
+                              r.value.format(),
+                              style: t.figure.copyWith(
+                                color: c.textTertiary,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            )
+                          : Figure(
+                              value: r.value.formatValue(),
+                              unit: Kwh.unit,
+                            ),
                     ),
                     Icon(
                       switch (r.source) {
