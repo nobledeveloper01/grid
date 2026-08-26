@@ -10,6 +10,55 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Design pass, code review, and two silent rendering bugs
+
+**Phase 2.**
+
+### What we built
+
+- A visual redesign around energy amber, then a `/design-review` pass over it (4 findings,
+  all fixed) and a `/review` pass over the phase 2 code (4 defects, all fixed).
+- Tests for the platform recogniser façade against a mocked method channel — 14 cases
+  including the time budget.
+
+### What we decided
+
+- **Dark is the default, not the system preference.** This app is opened at a meter,
+  outdoors, after dark more often than not. Following the system setting meant most users
+  would never see the version of Grid that looks like the thing it is about.
+- **Amber is the brand, semantically.** Current, warmth, sunlight, the moment the light comes
+  back on. A cool blue or a clinical grey says "utility bill".
+- **The native side recognises text and nothing else.** Choosing which digit run is the meter
+  register happens in Dart, so the judgement is testable without a device and identical on
+  both platforms.
+
+### What surprised us
+
+- **Two rendering bugs that threw nothing and logged nothing.** The power log's day bars
+  rendered at zero height for days, and looked exactly like missing data — a childless
+  `ColoredBox` sizes to the smallest constraint it is given, and a `Row`'s default
+  cross-axis alignment offers zero. The fix is one line; finding it took four builds,
+  because every hypothesis about *data* was wrong and the data was fine the whole time.
+  Adding a visible track was what finally separated "the row is not drawing" from "the row
+  is drawing nothing".
+- **`RichText` does not inherit `MediaQuery.textScaler`, but `Text` does.** The reading on
+  the confirm screen is drawn with `RichText` so individual digits can be marked uncertain —
+  which quietly made the single most important number in the app the one thing that ignored
+  the user's text size.
+- **Vision calls its completion handler on whatever queue performed the request.** We were
+  replying to Flutter from a background thread, and `perform` can throw *after* that handler
+  fires, which would reply twice and hit Flutter's fatal "reply already submitted". Neither
+  shows up on a simulator with no camera.
+- **A disposed `CameraController` still reports `value.isInitialized == true`.** The obvious
+  lifecycle guard reads correctly and does nothing.
+
+### Where we stopped
+
+- Phase 2 is built and reviewed. Its accuracy gate still cannot be closed here — ≥95% on a
+  well-lit analogue test set needs photographs of real meters, and the simulator has no
+  camera.
+- 179 tests green. Next: phase 3, supply inference via the platform channels.
+
 ## 2026-08-26 — Camera capture, on-device OCR, and the amber redesign
 
 **Phase 2.** 1 commits. 28 files changed, 2092 insertions(+), 393 deletions(-).

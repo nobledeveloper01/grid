@@ -141,29 +141,41 @@ class _DayRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: SizedBox(
-              height: 20,
-              child: ClipRRect(
+            child: Container(
+              height: 14,
+              // The track keeps an all-unknown day visible as a row rather
+              // than as a gap, and gives the coloured segments something to
+              // sit in when they cover only part of the day.
+              decoration: BoxDecoration(
+                color: c.track,
                 borderRadius: Radii.smAll,
-                child: Row(
-                  children: [
-                    if (day.availableMinutes > 0)
-                      Expanded(
-                        flex: day.availableMinutes,
-                        child: ColoredBox(color: c.supplyOn),
-                      ),
-                    if (day.unavailableMinutes > 0)
-                      Expanded(
-                        flex: day.unavailableMinutes,
-                        child: ColoredBox(color: c.supplyOff),
-                      ),
-                    if (day.unknownMinutes > 0)
-                      Expanded(
-                        flex: day.unknownMinutes,
-                        child: ColoredBox(color: c.supplyUnknown),
-                      ),
-                  ],
-                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Row(
+                // Stretch, not the default centre. A childless ColoredBox
+                // sizes to the smallest constraint it is given, so under a
+                // Row's default cross-axis alignment every segment collapsed
+                // to zero height and the whole bar rendered invisible — the
+                // data was correct, nothing threw, and the row simply looked
+                // empty.
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (day.availableMinutes > 0)
+                    Expanded(
+                      flex: day.availableMinutes,
+                      child: ColoredBox(color: c.supplyOn),
+                    ),
+                  if (day.unavailableMinutes > 0)
+                    Expanded(
+                      flex: day.unavailableMinutes,
+                      child: ColoredBox(color: c.supplyOff),
+                    ),
+                  if (day.unknownMinutes > 0)
+                    Expanded(
+                      flex: day.unknownMinutes,
+                      child: ColoredBox(color: c.supplyUnknown),
+                    ),
+                ],
               ),
             ),
           ),
