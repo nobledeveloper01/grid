@@ -56,6 +56,26 @@ if [ -d .git ]; then
     else
       ok "$tracked screenshots tracked"
     fi
+
+    # And the other direction: a screenshot nobody shows.
+    #
+    # Capturing one and forgetting to reference it is the same failure as the
+    # untracked backlog — the work is done, the gate is green, and the reader
+    # never sees it. Four accumulated before anyone noticed. Every reference in
+    # both READMEs counts, so a screenshot used only by the server's page is
+    # not reported as orphaned.
+    orphans=""
+    for shot in docs/screenshots/*.png; do
+      base=$(basename "$shot")
+      if ! grep -qR --include='*.md' "$base" . 2>/dev/null; then
+        orphans="$orphans $base"
+      fi
+    done
+    if [ -n "$orphans" ]; then
+      err "screenshots nothing references — captured, committed, and invisible:$orphans"
+    else
+      ok "every screenshot is referenced by a document"
+    fi
   fi
 fi
 

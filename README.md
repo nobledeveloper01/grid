@@ -305,6 +305,86 @@ nobody trusts), and Grid counts.
 
 ---
 
+### What power actually costs
+
+<p align="center">
+  <img src="docs/screenshots/17-running-costs.png" width="230" alt="Generated power priced per kWh against the grid rate" />
+  <img src="docs/screenshots/18-solar-and-coach.png" width="230" alt="Solar sizing, and what each appliance costs a month" />
+</p>
+
+Nobody in this market consumes only grid electricity, so every figure elsewhere
+in Grid describes half the bill. Here is the other half: **₦794/kWh generated
+against ₦209.70 from the grid — 3.8× the rate**, blended to ₦359.76 across
+both, with 26% of the household's energy coming off the generator.
+
+Fuel and running hours are matched over the *same* window. Dividing a month of
+fuel by a week of running gives a rate four times too low and looks entirely
+reasonable on screen.
+
+The solar sizing is derived from this household's own measured consumption and
+its **longest** measured outage — an average-sized battery is flat precisely on
+the days it was bought for. Payback is computed against logged fuel spend and
+is **absent** without it: inventing a fuel bill to produce a payback figure is
+the vendor behaviour this feature exists to replace. What the estimate does not
+know is listed beside the recommendation, not under it.
+
+### One meter, several households
+
+<p align="center">
+  <img src="docs/screenshots/19-split-the-bill.png" width="230" alt="Three households, shares that sum exactly to the meter total" />
+  <img src="docs/screenshots/20-tenant-statement.png" width="248" alt="The page a tenant opens: their share, and the whole split" />
+</p>
+
+The default arrangement in Nigerian rented accommodation, and the argument is
+settled by shouting because nobody can see the arithmetic. Four rules, a share
+each, and a receipt that shows the working rather than the answer.
+
+The line that matters is the green one: **the shares add up to the meter total
+exactly, to the kobo**, and the few kobo that would not divide evenly are
+attributed by name. That invariant holds under 300 randomised property trials
+in Dart and 2,000 in Go — the two implementations are pinned to the same
+fixtures, because a tenant disputing a statement against their landlord's phone
+over a one-kobo difference would be a dispute this product created.
+
+The tenant page on the right needs no account, no app and no JavaScript, and
+carries the **whole** split rather than just the reader's own number. Somebody
+being asked to pay is entitled to check the arithmetic, not merely trust it.
+
+### Several meters, and not losing any of it
+
+<p align="center">
+  <img src="docs/screenshots/23-meter-switcher.png" width="230" alt="Switching between a home and a shop meter" />
+  <img src="docs/screenshots/22-backup.png" width="230" alt="Encrypted backup and restore" />
+</p>
+
+Every fact was already keyed by meter, so adding several moved the header and
+nothing else. Records stay completely separate — nothing in Grid averages
+across meters, and a combined total would be the first figure in the product
+that mixes two records.
+
+The backup is the least glamorous thing here and one of the few that is
+load-bearing: an evidence product with no recovery path is one dropped phone
+away from having nothing. The archive is JSON rather than the database file, so
+one written two years and four migrations ago still restores; it is encrypted
+with a passphrase Grid never keeps; and restoring **adds** rather than
+replaces, so running the same archive twice changes nothing.
+
+### Your area
+
+<p align="center">
+  <img src="docs/screenshots/21-your-area.png" width="300" alt="What would be sent, and what never leaves the phone" />
+</p>
+
+One household's log proves that household was out. Several on the same feeder
+prove the *feeder* was out, which is a stronger claim nobody can make alone.
+
+The interesting part of this screen is the second panel. **The consent copy is
+generated from the payload itself**, not written alongside it, so it cannot
+drift from what would actually be sent — and a test asserts that the forbidden
+fields appear nowhere in the encoded output. What leaves is an LGA, a DisCo, a
+date with no time of day, and hours. A meter number is unique and printed on
+the meter; it would let anyone holding the aggregate walk it back to a person.
+
 ## 4. What each layer does
 
 ### `lib/domain` — the rules, with no Flutter in them
