@@ -18,5 +18,8 @@ import UIKit
     TextRecogniserPlugin.register(
       with: engineBridge.pluginRegistry.registrar(forPlugin: "TextRecogniserPlugin")!
     )
+    SupplyMonitorPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "SupplyMonitorPlugin")!
+    )
   }
 }

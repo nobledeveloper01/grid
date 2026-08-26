@@ -15,6 +15,7 @@ import '../../../shared/widgets/info_note.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../../shared/widgets/supply_strip.dart';
 import '../../meter/application/meter_providers.dart';
+import '../../supply/application/supply_inference_controller.dart';
 import '../widgets/hero_card.dart';
 import '../widgets/section_header.dart';
 
@@ -38,6 +39,11 @@ class HomeScreen extends ConsumerWidget {
     final compliance = ref.watch(complianceProvider(meter.id));
     final rate = ref.watch(effectiveRateProvider(meter.id));
     final now = ref.watch(clockProvider)();
+
+    // Charging-state inference runs while the home screen is mounted. It is
+    // an inference, it is debounced, and it stops entirely for a user who
+    // told us they are on an inverter.
+    ref.watch(supplyInferenceProvider);
 
     return GridScaffold(
       showBack: false,

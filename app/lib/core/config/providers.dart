@@ -12,7 +12,9 @@ import '../../domain/services/compliance_engine.dart';
 import '../../domain/services/consumption_engine.dart';
 import '../../domain/services/forecast_engine.dart';
 import '../../domain/services/load_model_engine.dart';
+import '../../domain/services/supply_inference_engine.dart';
 import '../../domain/services/validation_engine.dart';
+import '../platform/supply_monitor.dart';
 import '../platform/text_recogniser.dart';
 
 /// Composition root.
@@ -135,6 +137,13 @@ final loadModelEngineProvider =
 /// a façade rather than a direct ML Kit dependency.
 final textRecogniserProvider =
     Provider<TextRecogniser>((ref) => const PlatformTextRecogniser());
+
+/// Device power monitoring. Reports honestly what the platform can promise.
+final supplyMonitorProvider =
+    Provider<SupplyMonitor>((ref) => PlatformSupplyMonitor());
+
+final supplyInferenceEngineProvider =
+    Provider<SupplyInferenceEngine>((ref) => const SupplyInferenceEngine());
 
 /// Whether the camera path should be offered at all. The capture screen hides
 /// it rather than showing a button that fails.
