@@ -3,12 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/router.dart';
 import 'core/theme/theme.dart';
+import 'features/splash/presentation/splash_screen.dart';
 
-class GridApp extends ConsumerWidget {
+class GridApp extends ConsumerStatefulWidget {
   const GridApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GridApp> createState() => _GridAppState();
+}
+
+class _GridAppState extends ConsumerState<GridApp> {
+  bool _splashDone = false;
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Grid',
       debugShowCheckedModeBanner: false,
@@ -20,6 +28,20 @@ class GridApp extends ConsumerWidget {
       // it is about. Light remains fully authored for daytime use.
       themeMode: ThemeMode.dark,
       routerConfig: ref.watch(routerProvider),
+      // The splash sits *over* the app rather than in front of it, so the
+      // router, the database and the tariff table all initialise while it
+      // plays. By the time it lifts, the first real screen is already built.
+      builder: (context, child) => Stack(
+        children: [
+          child ?? const SizedBox.shrink(),
+          if (!_splashDone)
+            SplashScreen(
+              onFinished: () {
+                if (mounted) setState(() => _splashDone = true);
+              },
+            ),
+        ],
+      ),
     );
   }
 }

@@ -42,8 +42,14 @@ class FirstValueScreen extends ConsumerWidget {
 
     return GridScaffold(
       showBack: false,
+      // Centred, unlike every other screen in the app.
+      //
+      // This is the one screen that is a moment rather than a working
+      // surface — there is nothing to scan and nothing to do except read one
+      // sentence. Left-alignment is right for lists and forms; a poster wants
+      // composition. It stays the only exception.
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Spacer(),
           TweenAnimationBuilder<double>(
@@ -58,7 +64,7 @@ class FirstValueScreen extends ConsumerWidget {
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // The brand mark, not the cool accent. This is the one
                 // celebratory moment in onboarding and it should look like
@@ -73,10 +79,15 @@ class FirstValueScreen extends ConsumerWidget {
                   child: Icon(Icons.bolt_rounded, size: 34, color: c.onBrand),
                 ),
                 const SizedBox(height: Space.xl),
-                Text(headline, style: t.headline),
+                Text(
+                  headline,
+                  textAlign: TextAlign.center,
+                  style: t.headline,
+                ),
                 const SizedBox(height: Space.md),
                 Text(
                   body,
+                  textAlign: TextAlign.center,
                   style: t.body.copyWith(color: c.textSecondary),
                 ),
               ],
@@ -86,6 +97,7 @@ class FirstValueScreen extends ConsumerWidget {
           Text(
             "Grid works with no internet. Nothing you log leaves your phone "
             "unless you choose to share it.",
+            textAlign: TextAlign.center,
             style: t.caption.copyWith(color: c.textTertiary),
           ),
           const SizedBox(height: Space.lg),

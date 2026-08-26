@@ -10,6 +10,39 @@ New entry: `make journal T="what this session was about"`.
 
 ---
 
+## 2026-08-26 — Splash screen, and a QA pass over every flow
+
+**Phase 2.** 2 commits. 7 files changed, 122 insertions(+), 23 deletions(-).
+
+### What we built
+
+- A splash screen: gradient mark, warm bloom, wordmark, 1.2 s, with native launch screens
+  painted to match so there is no white flash.
+- A QA pass from a genuinely clean install over every flow, and the fixes it produced.
+
+### What we decided
+
+- **Dark is the default**, and the payoff screen is the one centred composition in the app —
+  it is a moment rather than a working surface, and everything else stays left-aligned.
+- **A splash is a standard for every app in this portfolio**, not a one-off for Grid.
+
+### What surprised us
+
+- **Flutter completes every `AnimationController` instantly when the platform reports
+  animations disabled.** Hanging the splash's dismissal off `forward().whenComplete(...)`
+  therefore tore it down before it drew a single frame — no flicker, no error, just an app
+  that opened straight onto onboarding. It took three builds and a 30-second duration to
+  believe it, because every instinct said "latency" rather than "the animation already
+  finished". A fresh simulator has reduce-motion on, which is the only reason it was caught
+  before a device. ADR-0009.
+- The same class of bug as the `ColoredBox` one earlier today: correct data, no exception,
+  nothing in the log, and a screen that simply is not there.
+
+### Where we stopped
+
+- Grid has a splash, a full design pass, a code review and a QA pass behind it. 179 tests.
+- Next: phase 3, supply inference.
+
 ## 2026-08-26 — Design pass, code review, and two silent rendering bugs
 
 **Phase 2.**

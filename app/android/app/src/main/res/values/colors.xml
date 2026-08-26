@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The same warm black the Flutter splash paints, so the handover from
+         the OS launch screen is invisible rather than a white flash. -->
+    <color name="launch_background">#12100C</color>
+</resources>
