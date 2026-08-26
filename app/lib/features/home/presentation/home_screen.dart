@@ -16,6 +16,8 @@ import '../../../shared/widgets/stat_tile.dart';
 import '../../../shared/widgets/supply_strip.dart';
 import '../../meter/application/meter_providers.dart';
 import '../../supply/application/supply_inference_controller.dart';
+import '../../../shared/charts/trend_chart.dart';
+import '../../insights/application/insights_providers.dart';
 import '../widgets/hero_card.dart';
 import '../widgets/section_header.dart';
 
@@ -119,6 +121,15 @@ class HomeScreen extends ConsumerWidget {
 
                 const SizedBox(height: Space.xl),
                 SectionHeader(
+                  title: 'What you used',
+                  action: 'Insights',
+                  onAction: () => context.push(Routes.insights),
+                ),
+                const SizedBox(height: Space.md),
+                _UsagePreview(meterId: meter.id),
+
+                const SizedBox(height: Space.xl),
+                SectionHeader(
                   title: 'Recent readings',
                   action: readings.isEmpty ? null : 'See all',
                   onAction: readings.isEmpty
@@ -190,6 +201,70 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A glance at the last thirty days, linking to the full chart.
+class _UsagePreview extends ConsumerWidget {
+  const _UsagePreview({required this.meterId});
+
+  final String meterId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final t = context.type;
+    final points =
+        ref.watch(consumptionTrendProvider((meterId: meterId, days: 30)));
+    final series =
+        ref.watch(consumptionSeriesProvider((meterId: meterId, days: 30)));
+
+    if (points.length < 2) {
+      return const InfoNote(
+        icon: Icons.show_chart_rounded,
+        message: 'Two readings and Grid can draw your usage. It only needs '
+            'the number on the meter.',
+      );
+    }
+
+    return Material(
+      color: c.surfaceRaised,
+      borderRadius: Radii.mdAll,
+      child: InkWell(
+        borderRadius: Radii.mdAll,
+        onTap: () => context.push(Routes.insights),
+        child: Padding(
+          padding: const EdgeInsets.all(Space.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    series == null
+                        ? '—'
+                        : Kwh.fromDouble(series.dailyMean).format(),
+                    style: t.title.copyWith(color: c.textPrimary),
+                  ),
+                  const SizedBox(width: Space.xs),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      'a day, last 30 days',
+                      style: t.caption.copyWith(color: c.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Space.sm),
+              TrendChart(points: points, valueLabel: 'kWh', height: 86,
+                  compact: true),
+            ],
+          ),
+        ),
       ),
     );
   }

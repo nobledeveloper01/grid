@@ -116,6 +116,14 @@ class ConsumptionEngine {
   ///
   /// [readings] need not be sorted. Flagged and superseded readings are
   /// excluded from computation but counted in [ConsumptionSeries.excludedReadingCount].
+  ///
+  /// When [windowStart] or [windowEnd] is given, the series *is* that window:
+  /// intervals are clipped to it and their energy apportioned by overlap, so
+  /// [ConsumptionSeries.total] and `dailyMean` describe the window and not the
+  /// whole history. That has to be true at this level rather than at each call
+  /// site. It was not, once, and the same mistake surfaced twice in a week —
+  /// a band-shortfall valuation and a "used in 30 days" figure that both
+  /// quietly reported ninety days. Neither looked wrong; they were just large.
   ConsumptionSeries series({
     required Meter meter,
     required List<Reading> readings,
@@ -178,22 +186,67 @@ class ConsumptionEngine {
       ));
     }
 
-    final daily = _interpolateDaily(intervals);
-    final total = intervals.fold<Kwh>(Kwh.zero, (a, i) => a + i.consumed);
+    final windowed = _clip(intervals, windowStart, windowEnd);
+    final daily = _interpolateDaily(windowed);
+    final total = windowed.fold<Kwh>(Kwh.zero, (a, i) => a + i.consumed);
 
     final coverage = _coverage(
-      intervals: intervals,
+      intervals: windowed,
       windowStart: windowStart ?? clean.first.readAt,
       windowEnd: windowEnd ?? clean.last.readAt,
     );
 
     return ConsumptionSeries(
-      intervals: intervals,
+      intervals: windowed,
       daily: daily,
       total: total,
       excludedReadingCount: excluded,
       coverage: coverage,
     );
+  }
+
+  /// Restricts intervals to a window, apportioning energy by overlap.
+  ///
+  /// An interval straddling the boundary contributes its share, not all of
+  /// it and not none of it. Dropping a partial interval would understate a
+  /// month by up to a reading cadence; keeping it whole would overstate it
+  /// by the same.
+  List<ConsumptionInterval> _clip(
+    List<ConsumptionInterval> intervals,
+    DateTime? start,
+    DateTime? end,
+  ) {
+    if (start == null && end == null) return intervals;
+
+    final clipped = <ConsumptionInterval>[];
+    for (final i in intervals) {
+      final from = start != null && i.from.isBefore(start) ? start : i.from;
+      final to = end != null && i.to.isAfter(end) ? end : i.to;
+      if (!to.isAfter(from)) continue;
+
+      final wholeMinutes = i.to.difference(i.from).inMinutes;
+      final keptMinutes = to.difference(from).inMinutes;
+      if (wholeMinutes <= 0 || keptMinutes <= 0) continue;
+
+      if (keptMinutes == wholeMinutes) {
+        clipped.add(i);
+        continue;
+      }
+
+      clipped.add(ConsumptionInterval(
+        from: from,
+        to: to,
+        consumed:
+            Kwh.fromMilli((i.consumed.milli * keptMinutes / wholeMinutes)
+                .round()),
+        days: keptMinutes / (60 * 24),
+        // A clipped interval is still measured at both ends of the *reading*
+        // it came from; the apportioning within it is uniform by
+        // construction, not a guess about the days inside it.
+        isEstimated: i.isEstimated,
+      ));
+    }
+    return clipped;
   }
 
   /// Rolling mean daily consumption over the last [days] days of readings.

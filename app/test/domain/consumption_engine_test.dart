@@ -238,6 +238,50 @@ void _windowedTotals() {
       return engine.series(meter: meter(), readings: readings);
     }
 
+    test('a windowed series reports the window, not the history', () {
+      // The trap: series() took a window and applied it only to coverage, so
+      // `total` silently described ninety days while the screen said thirty.
+      final readings = <Reading>[];
+      var register = 1000.0;
+      for (var i = 0; i < 10; i++) {
+        readings.add(reading(
+          id: 'w\$i',
+          value: register,
+          at: now.subtract(Duration(days: 36 - i * 4)),
+        ));
+        register += 40;
+      }
+
+      final whole = engine.series(meter: meter(), readings: readings);
+      final month = engine.series(
+        meter: meter(),
+        readings: readings,
+        windowStart: now.subtract(const Duration(days: 10)),
+        windowEnd: now,
+      );
+
+      expect(whole.total.value, closeTo(360, 0.5));
+      expect(month.total.value, closeTo(100, 12),
+          reason: 'ten days at roughly ten a day');
+      expect(month.dailyMean, closeTo(10, 1.5));
+    });
+
+    test('an interval straddling the boundary contributes its share', () {
+      // Two readings twenty days apart at 200 kWh. A window opening halfway
+      // through must see about half of it — not all of it, and not none.
+      final readings = [
+        reading(id: 'a', value: 1000, at: now.subtract(const Duration(days: 20))),
+        reading(id: 'b', value: 1200, at: now),
+      ];
+      final half = engine.series(
+        meter: meter(),
+        readings: readings,
+        windowStart: now.subtract(const Duration(days: 10)),
+        windowEnd: now,
+      );
+      expect(half.total.value, closeTo(100, 0.5));
+    });
+
     test('windows the total instead of returning the whole series', () {
       final s = flatSeries();
       final all = s.total.value;

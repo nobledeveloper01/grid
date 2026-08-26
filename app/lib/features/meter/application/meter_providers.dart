@@ -197,10 +197,10 @@ final bandAdherenceProvider =
         now: now,
       );
 
-  // Energy over the same window the hours were measured over — `totalIn`,
-  // not `total`. A valuation that multiplies one period's rate difference by
-  // the whole history's energy is a number nobody can defend, and it is not
-  // obviously wrong on screen: it just reads as a bigger claim.
+  // Energy over the same window the hours were measured over. `series` clips
+  // to the window it is given, so `total` is the window's total — see the
+  // note on ConsumptionEngine.series for why that is enforced there and not
+  // at each call site.
   final series = ref.watch(consumptionEngineProvider).series(
         meter: meter,
         readings: readings,
@@ -212,8 +212,8 @@ final bandAdherenceProvider =
   return ref.watch(bandAdherenceEngineProvider).evaluate(
         billedBand: band,
         summary: summary,
-        energy: series.totalIn(windowStart, now),
-        energyIsAllocated: series.isInterpolatedIn(windowStart, now),
+        energy: series.total,
+        energyIsAllocated: series.daily.any((d) => d.isInterpolated),
         billedRate: billedRate,
         rateForBand: (b) => table?.rateFor(meter.disco, b),
         windowDays: windowDays,

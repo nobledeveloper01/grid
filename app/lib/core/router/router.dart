@@ -14,6 +14,8 @@ import '../../features/reading/presentation/confirm_reading_screen.dart';
 import '../../features/reading/presentation/manual_entry_screen.dart';
 import '../../features/reading/presentation/reading_history_screen.dart';
 import '../../features/reading/presentation/purchase_entry_screen.dart';
+import '../../features/appliances/presentation/appliance_screen.dart';
+import '../../features/insights/presentation/insights_screen.dart';
 import '../../features/supply/presentation/supply_timeline_screen.dart';
 
 /// Route names, referenced rather than typed as strings at call sites.
@@ -30,6 +32,8 @@ abstract final class Routes {
   static const readingHistory = '/reading/history';
   static const purchaseEntry = '/reading/purchase';
   static const supplyTimeline = '/supply';
+  static const insights = '/insights';
+  static const appliances = '/appliances';
 }
 
 /// Bridges a Riverpod provider to GoRouter's [Listenable]-based refresh.
@@ -116,6 +120,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.supplyTimeline,
         builder: (context, state) => const SupplyTimelineScreen(),
+      ),
+      GoRoute(
+        path: Routes.insights,
+        builder: (context, state) => const InsightsScreen(),
+      ),
+      GoRoute(
+        path: Routes.appliances,
+        builder: (context, state) => const ApplianceScreen(),
       ),
     ],
   );
