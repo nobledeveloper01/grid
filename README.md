@@ -35,6 +35,11 @@ dispute pack you can hand over.
 
 **265 tests passing. Domain engines at 98% line coverage.**
 
+Verified on the iOS simulator end to end. **Android has not been compiled since the supply
+monitor landed** — the development machine has no Android SDK installed — so the Kotlin
+plugins and the notification permission are reviewed but unbuilt. That is a real gap, and it
+is the first thing to close on a machine that has the SDK.
+
 See [`CHANGELOG.md`](CHANGELOG.md) for what changed and why, [`docs/ROADMAP.md`](docs/ROADMAP.md)
 for the phases and their gates, and [`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md) for the
 fifteen features that were sourced, costed and phased — including the five that were cut, and
