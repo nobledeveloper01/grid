@@ -479,9 +479,21 @@ bug fails to reproduce.
 ### Without installing Flutter
 
 ```bash
-docker compose run --rm verify     # analyze + the full test suite
-docker compose run --rm apk        # writes build/grid-debug.apk
+make docker-verify     # analyze + the full test suite, on a pinned toolchain
+make docker-apk        # writes build/grid-debug.apk — see the caveat below
 ```
+
+`docker-verify` works: it runs `flutter analyze` and all 325 tests inside the
+container on Flutter 3.47.1, so a green run means the same thing on any machine.
+
+**`docker-apk` does not currently succeed.** Gradle downloads Android SDK
+Platform 37, reports it installed, and then fails to find `android-37` in the
+SDK root; `sdkmanager` in the image cannot see that package at all, so
+pre-installing is not an option either. Each attempt costs about eighteen
+minutes under amd64 emulation. The diagnosis is written into the
+[`Dockerfile`](Dockerfile) rather than left as a mystery, and the consequence —
+that the Kotlin plugins have still never been compiled — is in
+[§11](#11-status).
 
 **Android only.** Xcode runs only on macOS and Apple's licence does not permit
 macOS in a container on non-Apple hardware, so no image builds the iOS half.

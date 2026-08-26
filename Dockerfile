@@ -110,6 +110,24 @@ RUN flutter analyze
 RUN flutter test
 
 # --- the artefact -----------------------------------------------------------
+#
+# **This target does not currently succeed, and the reason is recorded rather
+# than hidden.** Gradle downloads "Android SDK Platform 37.0" during the build,
+# reports it installed, and then fails with:
+#
+#     Failed to find target with hash string 'android-37' in: /opt/android-sdk-linux
+#
+# `sdkmanager` in this image cannot see `platforms;android-37` at all, even
+# after `--update`, so pre-installing it is not available either. Setting
+# ANDROID_HOME alongside ANDROID_SDK_ROOT did not resolve it. Each attempt
+# costs about eighteen minutes under amd64 emulation, which is why this is
+# written down instead of iterated on.
+#
+# The `verify` target above is unaffected and does work: analyze and the full
+# suite run on the pinned toolchain, which is the half that guards correctness.
+# What is still missing is a compiled Kotlin plugin — the supply monitor and
+# the text recogniser have never been built — and that gap is listed in the
+# README's status table rather than implied away.
 FROM base AS apk
 RUN flutter build apk --debug
 
