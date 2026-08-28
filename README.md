@@ -808,7 +808,8 @@ disagree by the second week.
 
 ```text
 app/lib/domain/            the engines and the entities — no Flutter imports,
-                           enforced by `make domain-purity`
+                           enforced by `make domain-purity`. Apache-2.0,
+                           separately from the rest of this repository
 app/lib/domain/services/   consumption, forecast, compliance, band adherence,
                            validation, load model, supply inference, dispute
                            pack, escalation, budget — the 95% coverage gate
@@ -881,6 +882,33 @@ a wrong word in front of the one audience that will notice. That is a translator
 | Physical iOS and Android verification | The definition of done | No devices to hand. Everything below is inference from a simulator |
 | Regulatory verification of the escalation ladder and the tariff table | **Release** | Grid quoting a superseded procedure would damage the user's case, which is the one thing it exists not to do |
 | Alerts reach a user who has stopped opening the app | Nothing — it is documented as impossible | No server and no background execution. [ADR-0010](docs/adr/0010-alerts-are-raised-in-the-foreground-and-say-so.md) sets out what was rejected and why |
+
+---
+
+## 12. Licensing
+
+Two licences, because the two halves have opposite jobs.
+
+**The application is under the [Business Source License 1.1](LICENSE).** You may
+run it in production to record, analyse and dispute electricity supply and
+billing belonging to you, to your tenants, or to your own customers, including
+as part of a service you provide them. You may not offer Grid itself to third
+parties as a hosted metering, billing or dispute service. On **2030-08-28** it
+converts to Apache-2.0 automatically, and that date moves forward with each
+release — so the terms have an end, and somebody who outlives the company still
+gets an open licence rather than an orphaned binary.
+
+**The domain package is Apache-2.0**: [`app/lib/domain`](app/lib/domain/).
+
+That split is not symmetry for its own sake. Every figure in a dispute pack —
+the consumption, the supply hours, the band adherence, the naira owed — comes
+out of that directory, and the whole point of the document is that a
+distribution company and a regulator will argue with it. **A number somebody is
+expected to accept, produced by arithmetic nobody outside the company may read,
+is a number with no standing.** The engines are separately licensed so that the
+other side of a dispute can check the sums.
+
+---
 
 Read [`CHANGELOG.md`](CHANGELOG.md) for what changed and why,
 [`docs/ROADMAP.md`](docs/ROADMAP.md) for the twelve phases and their machine-checked
