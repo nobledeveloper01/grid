@@ -26,7 +26,7 @@ ok()   { printf '%s✓%s %s\n' "$GRN" "$OFF" "$1"; }
 # gets `git add -A`'d, reports a clean commit — and is not in the repository.
 # That happened to the feature backlog: written, gated, committed and absent
 # from GitHub for a day. The gate now asks git, not the filesystem.
-REQUIRED="README.md CLAUDE.md DESIGN.md CHANGELOG.md PHASE
+REQUIRED="README.md DESIGN.md CHANGELOG.md PHASE
           docs/ROADMAP.md docs/JOURNAL.md docs/00-PRODUCT-STATEMENT.md
           docs/FEATURE-BACKLOG.md"
 

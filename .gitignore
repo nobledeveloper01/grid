@@ -48,3 +48,7 @@ docs/*
 **/android/app/profile/
 **/android/app/release/
 **/android/.kotlin/
+
+# Engineering standards for whoever works in here. Kept out of the published
+# repository; the ADRs carry the reasoning meant to be read from outside.
+CLAUDE.md
