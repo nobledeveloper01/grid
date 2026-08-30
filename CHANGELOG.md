@@ -9,6 +9,15 @@ line somebody will undo in six months.
 
 ## [Unreleased]
 
+### Fixed
+
+- `doc-check.sh` checked that every *required* document was tracked by git and
+  never checked it of the ADRs — the same allow-list blind spot the gate exists
+  to prevent. All of this project's ADRs happen to be tracked; the sibling
+  project's were not, and that is where this was found. Proved by planting an
+  untracked ADR.
+
+
 ### Added
 
 - **Camera capture and on-device OCR.** A full-bleed capture screen with a guide rect sized

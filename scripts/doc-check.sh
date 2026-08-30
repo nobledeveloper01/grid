@@ -128,6 +128,12 @@ if [ -d docs/adr ]; then
     num=$((10#${base%%-*}))
     [ "$num" -eq "$expected" ] || adr_bad="$adr_bad $base(expected $expected)"
     expected=$((num+1))
+    # An ADR on disk is not an ADR anybody can read. This gate has always
+    # checked that the required documents are tracked and never checked it of
+    # the ADRs — the same allow-list blind spot it exists to prevent, found in
+    # the sibling project first.
+    git ls-files --error-unmatch "$f" >/dev/null 2>&1 \
+      || err "$base is present but not tracked by git — nobody outside this machine can read it"
     for section in '^\*\*Status:\*\*' '^## Context' '^## Decision' '^## Consequences'; do
       grep -qE "$section" "$f" || err "$base is missing a '$(echo "$section" | tr -d '^\\*#')' section"
     done
